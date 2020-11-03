@@ -1,0 +1,278 @@
+{
+  "n_organisms": 64,
+  "n_elites": 4,
+  "n_generations": 100,
+  "n_beats": 3,
+  "t_sampling": 0.001,
+  "multipliers": [
+    {
+      "name": "P_Na",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "g_Ca_L",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "g_t",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "g_kur",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "g_K1",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "g_Ks",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "g_Kr",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "g_B_Na",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "g_B_Ca",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "i_NaK_max",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "i_CaP_max",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "K_NaCa",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "I_up_max",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    },
+    {
+      "name": "alpha_rel",
+      "bounds": [
+        0.2,
+        5
+      ],
+      "gamma": 0.001
+    }
+  ],
+  "experimental_conditions": [
+    {
+      "CL": 2000,
+      "filename_phenotype": "./baselines/baseline_2000.txt",
+      "filename_state": "./states_start/state_2000.txt",
+      "params": [
+        {
+          "name": "Na_i",
+          "bounds": [
+            6,
+            12
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "Ca_rel",
+          "bounds": [
+            0.01,
+            2
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "K_i",
+          "bounds": [
+            125,
+            135
+          ],
+          "gamma": 0.001
+        }
+      ]
+    },
+    {
+      "CL": 1000,
+      "filename_phenotype": "./baselines/baseline_1000.txt",
+      "filename_state": "./states_start/state_1000.txt",
+      "params": [
+        {
+          "name": "Na_i",
+          "bounds": [
+            6,
+            12
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "Ca_rel",
+          "bounds": [
+            0.01,
+            2
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "K_i",
+          "bounds": [
+            125,
+            135
+          ],
+          "gamma": 0.001
+        }
+      ]
+    },
+    {
+      "CL": 500,
+      "filename_phenotype": "./baselines/baseline_500.txt",
+      "filename_state": "./states_start/state_500.txt",
+      "params": [
+        {
+          "name": "Na_i",
+          "bounds": [
+            6,
+            12
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "Ca_rel",
+          "bounds": [
+            0.01,
+            2
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "K_i",
+          "bounds": [
+            125,
+            135
+          ],
+          "gamma": 0.001
+        }
+      ]
+    },
+    {
+      "CL": 333,
+      "filename_phenotype": "./baselines/baseline_333.txt",
+      "filename_state": "./states_start/state_333.txt",
+      "params": [
+        {
+          "name": "Na_i",
+          "bounds": [
+            6,
+            12
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "Ca_rel",
+          "bounds": [
+            0.01,
+            2
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "K_i",
+          "bounds": [
+            125,
+            135
+          ],
+          "gamma": 0.001
+        }
+      ]
+    },
+    {
+      "CL": 250,
+      "filename_phenotype": "./baselines/baseline_250.txt",
+      "filename_state": "./states_start/state_250.txt",
+      "params": [
+        {
+          "name": "Na_i",
+          "bounds": [
+            6,
+            12
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "Ca_rel",
+          "bounds": [
+            0.01,
+            2
+          ],
+          "gamma": 0.001
+        },
+        {
+          "name": "K_i",
+          "bounds": [
+            125,
+            135
+          ],
+          "gamma": 0.001
+        }
+      ]
+    }
+  ]
+}
