@@ -13,7 +13,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 from src.model.maleckar import init_states_constants, compute_rates, legend
 from src.helpers import get_value_by_key, update_array_from_kwargs,\
-    calculate_RMSE, flatten_list, batches_from_list, value_from_bounds
+    calculate_RMSE, flatten_list, batches_from_list, value_from_bounds, argmax_list_of_dicts
 from src.algorythm.ga import do_step
 
 
@@ -164,20 +164,16 @@ def generate_bounds_gammas(config):
     return bounds, gammas
 
 
-def save_epoch(population, file_dump, output_folder_name):
+def save_epoch(population, dump_filename, output_folder_name):
     population = sorted(population, key=lambda organism: organism['fitness'], reverse=True)
     genes = np.array([organism['genes'] for organism in population])
     fitness = np.array([organism['fitness'] for organism in population])
 
     dump_current = np.hstack([genes, fitness[:, None]])
-    dump_current.tofile(file_dump)
+    with open(dump_filename, 'ba+') as file_dump:
+        dump_current.tofile(file_dump)
 
-    for i, exp_cond in enumerate(config['experimental_conditions']):
-        CL = exp_cond['CL']
-        np.savetxt(os.path.join(output_folder_name, f"waveform_{CL}.txt"), population[0]['phenotype'][i])
-        np.savetxt(os.path.join(output_folder_name, f"state_{CL}.txt"), population[0]['state'][i])
-
-    print(np.array2string(dump_current[0, :], formatter={'float_kind':lambda x: "%.3f" % x}, max_line_width=1000)[1:-1], flush=True)
+    print(np.array2string(dump_current[0, :], formatter={'float_kind': lambda x: "%.3f" % x}, max_line_width=1000)[1:-1], flush=True)
 
 
 def remove_invalids(population, bounds):
@@ -185,7 +181,7 @@ def remove_invalids(population, bounds):
     for organism in population:
         condition_invalid = np.any(np.isnan(organism['genes'])) \
                             or np.any(np.isnan(organism['state'])) \
-                            or np.isnan(organism['fitness']) \
+                            or (organism['fitness'] == np.NINF) \
                             or np.any(organism['genes'] <= bounds[:, 0]) \
                             or np.any(organism['genes'] >= bounds[:, 1])
         if not condition_invalid:
@@ -269,20 +265,20 @@ for exp_cond in config['experimental_conditions']:
     filename_state = os.path.join(config_path, exp_cond['filename_state'])
     exp_cond['initial_state'] = np.loadtxt(filename_state)
 
-bounds, gammas = generate_bounds_gammas(config)
-
+output_folder_name = "./output"
+output_folder_name_phenotype = os.path.join(output_folder_name, "phenotype")
+output_folder_name_state = os.path.join(output_folder_name, "state")
+dump_filename = os.path.join(output_folder_name, "dump")
 
 if comm_rank == 0:
-    population = init_population(config=config, legend=legend)
-    output_folder_name = "./output"
-    if not os.path.isdir(output_folder_name):
-        os.mkdir(output_folder_name)
-    file_dump = open(os.path.join(output_folder_name, "dump"), "wb")
+    for folder in output_folder_name_phenotype, output_folder_name_state:
+        os.makedirs(folder, exist_ok=True)
+    with open(dump_filename, "wb") as file_dump:  # create or clear and close
+        pass
     time_start = time.time()
     print("# SIZE =", comm_size, flush=True)
-else:
-    population = None
 
+bounds, gammas = generate_bounds_gammas(config)
 
 n_orgsnisms_per_process = config['n_organisms'] // comm_size
 
@@ -304,41 +300,15 @@ del organism_dummy
 #  Main cycle
 times = dict()
 
-NUMPY_SCATTER = True
-NUMPY_GATHER = True
+if comm_rank == 0:
+    population = init_population(config=config, legend=legend)
+    population = batches_from_list(population, comm_size)
+else:
+    population = None
+
+batch = comm.scatter(population, root=0)
 
 for epoch in range(config['n_generations']):
-
-    times['scat'] = time.time()
-    if NUMPY_SCATTER:
-        sendbuf_genes = None
-        sendbuf_state = None
-        if comm_rank == 0:
-            sendbuf_genes = np.empty([comm_size, n_orgsnisms_per_process * genes_size])
-            sendbuf_state = np.empty([comm_size, n_orgsnisms_per_process * state_size])
-
-        recvbuf_genes = np.empty([n_orgsnisms_per_process * genes_size])
-        recvbuf_state = np.empty([n_orgsnisms_per_process * state_size])
-
-        if comm_rank == 0:
-            population_batches = batches_from_list(population, comm_size)
-            for i, batch in enumerate(population_batches):
-                sendbuf_genes[i] = np.concatenate([organism['genes'].flatten() for organism in batch])
-                sendbuf_state[i] = np.concatenate([organism['state'].flatten() for organism in batch])
-
-        comm.Scatter(sendbuf_genes, recvbuf_genes, root=0)
-        comm.Scatter(sendbuf_state, recvbuf_state, root=0)
-        recvbuf_genes = recvbuf_genes.reshape((n_orgsnisms_per_process, genes_size))
-        recvbuf_state = recvbuf_state.reshape((n_orgsnisms_per_process, *state_shape))
-
-        batch = [dict(genes=recvbuf_genes[i].copy(),
-                      state=recvbuf_state[i].copy()) for i in range(n_orgsnisms_per_process)]
-    else:
-        if comm_rank == 0:
-            population = batches_from_list(population, comm_size)
-        batch = comm.scatter(population, root=0)
-
-    times['scat'] = time.time() - times['scat']
 
     #  calculations
     times['calc'] = time.time()
@@ -348,78 +318,89 @@ for epoch in range(config['n_generations']):
         except:
             print("Bad guy")
             organism['phenotype'] = [np.empty(length) for length in phenotype_lens]  # needed for gather
-            organism['fitness'] = np.nan
+            organism['fitness'] = np.NINF
             continue
         update_fitness(organism, config)
     times['calc'] = time.time() - times['calc']
 
+    times['gather_concat'] = time.time()
+    sendbuf_genes = np.concatenate([organism['genes'].flatten() for organism in batch])
+    sendbuf_state = np.concatenate([organism['state'].flatten() for organism in batch])
+    #sendbuf_phenotype = np.concatenate([np.concatenate(organism['phenotype']) for organism in batch])
+    sendbuf_fitness = np.array([organism['fitness'] for organism in batch])
+    times['gather_concat'] = time.time() - times['gather_concat']
+
+    times['gather_alloc'] = time.time()
+    recvbuf_genes = np.empty([comm_size, n_orgsnisms_per_process * genes_size])
+    recvbuf_state = np.empty([comm_size, n_orgsnisms_per_process * state_size])
+    #recvbuf_phenotype = np.empty([comm_size, n_orgsnisms_per_process * phenotype_size])
+    recvbuf_fitness = np.empty([comm_size, n_orgsnisms_per_process * 1])
+    times['gather_alloc'] = time.time() - times['gather_alloc']
+
     times['gather'] = time.time()
-    if NUMPY_GATHER:
-        sendbuf_genes = np.concatenate([organism['genes'].flatten() for organism in batch])
-        sendbuf_state = np.concatenate([organism['state'].flatten() for organism in batch])
-        sendbuf_phenotype = np.concatenate([np.concatenate(organism['phenotype']) for organism in batch])
-        sendbuf_fitness = np.array([organism['fitness'] for organism in batch])
-
-        recvbuf_genes = None
-        recvbuf_state = None
-        recvbuf_phenotype = None
-        recvbuf_fitness = None
-
-        if comm_rank == 0:
-            recvbuf_genes = np.empty([comm_size, n_orgsnisms_per_process * genes_size])
-            recvbuf_state = np.empty([comm_size, n_orgsnisms_per_process * state_size])
-            recvbuf_phenotype = np.empty([comm_size, n_orgsnisms_per_process * phenotype_size])
-            recvbuf_fitness = np.empty([comm_size, n_orgsnisms_per_process * 1])
-
-        comm.Gather(sendbuf_genes, recvbuf_genes, root=0)
-        comm.Gather(sendbuf_state, recvbuf_state, root=0)
-        comm.Gather(sendbuf_phenotype, recvbuf_phenotype, root=0)
-        comm.Gather(sendbuf_fitness, recvbuf_fitness, root=0)
-
-        if comm_rank == 0:
-            recvbuf_genes = recvbuf_genes.reshape((config['n_organisms'], genes_size))
-            recvbuf_state = recvbuf_state.reshape((config['n_organisms'], *state_shape))
-            recvbuf_phenotype = recvbuf_phenotype.reshape((config['n_organisms'], phenotype_size))
-            recvbuf_fitness = recvbuf_fitness.flatten()
-
-            population = [dict(genes     = recvbuf_genes[i].copy(),
-                               state     = recvbuf_state[i].copy(),
-                               phenotype = np.split(recvbuf_phenotype[i].copy(), indices_or_sections=phenotype_split_indices),
-                               fitness   = recvbuf_fitness[i].copy()) for i in range(config['n_organisms'])]
-    else:
-        population = comm.gather(batch, root=0)
-        if comm_rank == 0:
-            population = flatten_list(population)
-
+    comm.Allgatherv(sendbuf_genes, recvbuf_genes)
+    comm.Allgatherv(sendbuf_state, recvbuf_state)
+    #comm.Allgatherv(sendbuf_phenotype, recvbuf_phenotype)
+    comm.Allgatherv(sendbuf_fitness, recvbuf_fitness)
     times['gather'] = time.time() - times['gather']
 
+    times['gather_reshape'] = time.time()
+    recvbuf_genes = recvbuf_genes.reshape((config['n_organisms'], genes_size))
+    recvbuf_state = recvbuf_state.reshape((config['n_organisms'], *state_shape))
+    #recvbuf_phenotype = recvbuf_phenotype.reshape((config['n_organisms'], phenotype_size))
+    recvbuf_fitness = recvbuf_fitness.flatten()
+    times['gather_reshape'] = time.time() - times['gather_reshape']
+
+    times['gather_pop'] = time.time()
+    population = [dict(genes     = recvbuf_genes[i].copy(),
+                       state     = recvbuf_state[i].copy(),
+                       #phenotype = np.split(recvbuf_phenotype[i].copy(), indices_or_sections=phenotype_split_indices),
+                       fitness   = recvbuf_fitness[i].copy()) for i in range(config['n_organisms'])]
+    times['gather_pop'] = time.time() - times['gather_pop']
+
+    index_best = argmax_list_of_dicts(population, 'fitness')
+    comm_rank_best = index_best // n_orgsnisms_per_process
+    index_best_batch = index_best % n_orgsnisms_per_process
+
+    if comm_rank == comm_rank_best:
+        organism_best = batch[index_best_batch]
+        for i, exp_cond in enumerate(config['experimental_conditions']):
+            CL = exp_cond['CL']
+            np.savetxt(os.path.join(output_folder_name_phenotype, f"phenotype{CL}_{epoch}.txt"), organism_best['phenotype'][i])
+            np.savetxt(os.path.join(output_folder_name_state, f"state_{CL}_{epoch}.txt"), organism_best['state'][i])
+
     if comm_rank == 0:
-        times['save'] = time.time()
-        save_epoch(population, file_dump, output_folder_name)
-        times['save'] = time.time() - times['save']
+        save_epoch(population, dump_filename, output_folder_name)
 
-        #  Next generation
-        times['genetic'] = time.time()
-        population = remove_invalids(population, bounds)
+    #  Next generation
+    times['genetic'] = time.time()
+    population = remove_invalids(population, bounds)
 
-        assert(len(population) > 3), "Not enough organisms for genetic operations"
+    assert(len(population) > 3), "Not enough organisms for genetic operations"
 
-        for organism in population:
-            organism['genes'], bounds_transformed = transform_genes_bounds(organism['genes'], bounds, gammas,
-                                                                           n_multipliers=len(config['multipliers']))
+    population.sort(key=lambda organism: organism['fitness'], reverse=True)
+    elites_all = population[:config['n_elites']]
+    elites_batch = elites_all[comm_rank * n_orgsnisms_per_process: (comm_rank + 1) * n_orgsnisms_per_process]
+    n_elites = len(elites_batch)
+    #  elites_batch may be empty list
 
-        population = do_step(population,
-                             new_size=config['n_organisms'],
-                             elite_size=config['n_elites'],
-                             bounds=bounds_transformed)
+    for organism in population:
+        organism['genes'], bounds_transformed = transform_genes_bounds(organism['genes'], bounds, gammas,
+                                                                       n_multipliers=len(config['multipliers']))
 
-        for organism in population:
-            organism['genes'] = transform_genes_bounds_back(organism['genes'], bounds_transformed, bounds_back=bounds,
-                                                            n_multipliers=len(config['multipliers']))
-        times['genetic'] = time.time() - times['genetic']
+    batch = do_step(population, new_size=n_orgsnisms_per_process - n_elites,
+                    elite_size=0, bounds=bounds_transformed)
 
-        times['total'] = sum(times[name] for name in times if name != 'total')
+    batch += elites_batch
 
+    for organism in batch:
+        organism['genes'] = transform_genes_bounds_back(organism['genes'], bounds_transformed, bounds_back=bounds,
+                                                        n_multipliers=len(config['multipliers']))
+    times['genetic'] = time.time() - times['genetic']
+
+    times['total'] = sum(times[name] for name in times if name != 'total')
+
+    if comm_rank == 0:
         print(f"# EPOCH {epoch}:")
         for t in times:
             print(f"# {t}:\t{times[t]:.6f}\t{100 * times[t] / times['total']:.2f} %")
