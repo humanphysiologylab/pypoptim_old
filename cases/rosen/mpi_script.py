@@ -25,7 +25,7 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 n_genes = 4
-n_organisms = 100
+n_organisms = 1000
 n_elites = max(1, int(n_organisms / 10))
 n_epochs = 1000
 
@@ -33,7 +33,7 @@ bounds = np.array([[-5, 5]] * n_genes)
 
 if rank == 0:
     population = init_population(n_organisms, bounds)
-    population = [population[i::size] for i in range(size)]
+    #population = [population[i::size] for i in range(size)]
     file_dump = open("dump", "wb")
     time_start = time.time()
     print("SIZE =", size, flush=True)
@@ -42,17 +42,17 @@ else:
 
 for epoch in range(n_epochs):
 
-    population = comm.scatter(population, root=0)
+    #population = comm.scatter(population, root=0)
 
     for i in range(len(population)):
         population[i]['fitness'] = calculate_fitness(population[i]['genes'])
 
-    population = comm.gather(population, root=0)
+    #population = comm.gather(population, root=0)
 
     if rank == 0:
-        population = list(itertools.chain(*population))  # flatten
+        #population = list(itertools.chain(*population))  # flatten
 
-        population = sorted(population, key=lambda x: x['fitness'], reverse=True)
+        population.sort(key=lambda x: x['fitness'], reverse=True)
         genes = np.array([x['genes'] for x in population])
         fitness = np.array([x['fitness'] for x in population])
 
@@ -62,8 +62,13 @@ for epoch in range(n_epochs):
         print(population[0]['fitness'], flush=True)
 
         #  Next generation
-        population = do_step(population, elite_size=n_elites, bounds=bounds)
-        population = [population[i::size] for i in range(size)]
+        kw_ga = dict(crossover_rate=1.0,
+                     mutation_rate=0.1,
+                     gamma=1.0)
+        population = do_step(population, new_size=len(population),
+                             elite_size=n_elites, bounds=bounds,
+                             **kw_ga)
+        #population = [population[i::size] for i in range(size)]
 
 if rank == 0:
     time_end = time.time()
