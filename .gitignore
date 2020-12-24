@@ -5,6 +5,7 @@ __pycache__/
 
 # C extensions
 *.so
+*.o
 
 # Distribution / packaging
 .Python
@@ -130,3 +131,7 @@ dmypy.json
 
 # Added by Andrey
 .idea
+results/
+images/
+data/voigt
+misc/
