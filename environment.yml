@@ -1,0 +1,16 @@
+name: noname
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.8
+  - ipykernel
+  - tqdm
+  - numpy
+  - pandas
+  - seaborn
+  - matplotlib
+  - ipywidgets
+  - mpi4py
+  - scikit-learn
+  - numba
