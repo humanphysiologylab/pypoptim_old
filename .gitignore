@@ -134,4 +134,6 @@ dmypy.json
 results/
 images/
 data/voigt
+data/timofeev
 misc/
+mpi_scripts/phystech
