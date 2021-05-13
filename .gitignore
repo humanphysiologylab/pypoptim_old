@@ -139,3 +139,5 @@ misc/
 mpi_scripts/phystech
 src/model_ctypes/_courtemanche
 # src/model_ctypes/_bondarenko
+
+configs/*/*/
