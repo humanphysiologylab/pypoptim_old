@@ -14,4 +14,5 @@ dependencies:
   - mpi4py
   - scikit-learn
   - numba
+  - git
   - GitPython
