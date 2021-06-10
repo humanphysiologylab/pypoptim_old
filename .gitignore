@@ -133,11 +133,15 @@ dmypy.json
 .idea
 results/
 images/
+
 data/voigt
 data/timofeev
+data/nesterova
+
 misc/
 mpi_scripts/phystech
 src/model_ctypes/_courtemanche
 # src/model_ctypes/_bondarenko
 configs/*/*/
 mpi_scripts/slurm/slurm-*.out
+publication
