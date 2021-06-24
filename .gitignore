@@ -145,3 +145,4 @@ src/model_ctypes/_courtemanche
 configs/*/*/
 mpi_scripts/slurm/slurm-*.out
 publication
+/mpi_scripts/slurm/
