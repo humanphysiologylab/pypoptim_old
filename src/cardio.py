@@ -1,21 +1,17 @@
-import os
+import sys
 import pickle
 
 import numpy as np
 import pandas as pd
 
-import matplotlib.pyplot as plt
-
-from numba import njit
-
 from scipy.integrate import solve_ivp
-
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
 
 from src.helpers import RMSE, calculate_mean_abs_noise, calculate_RMSE_weightened, \
                         calculate_RMSE_balanced, calculate_composite_RMSE_V_CaT, autoscaling, \
                         value_from_bounds
+
+from deprecated import deprecated
+
 
 def create_genes_dict_from_config(config):
     genes_dict = {ec_name:
@@ -114,11 +110,14 @@ def run_model_ctypes(S, C, stim_protocol, config):
                                                   chain_length, v_threshold, t_safe,
                                                   n_beats, t_sampling, tol, output)
     else:
+
         status = run_model_ctypes.model.run(S.values.copy(), C.values.copy(),
                                             n_beats, t_sampling, tol, output,
                                             None, None,
                                             stim_protocol_Ist,  stim_protocol_t
                                             )
+
+
 
     n_beats_save = config.get('n_beats_save', 1)
 
@@ -127,6 +126,7 @@ def run_model_ctypes(S, C, stim_protocol, config):
     return status, output
 
 
+@deprecated(reason="use ctypes models")
 def run_model_scipy(S, C, config):
 
         stim_period = C[config['stim_period_legend_name']]
@@ -144,14 +144,12 @@ def run_model_scipy(S, C, config):
                   file=sys.stderr, fflush=True)
             exit()
 
-        #tol = config.get('tol', 1e-6)
-
         n_samples_per_stim = int(stim_period / t_sampling)
 
         t_space = np.linspace(0, stim_period * n_beats, n_samples_per_stim * n_beats + 1, endpoint=True)
         t_span = 0, t_space[-1]
 
-        def fun(t, y, params): # TODO: rewrite
+        def fun(t, y, params):  # TODO: rewrite
             ydot = np.zeros_like(y)
             run_model_scipy.model.fun(t, y, ydot, params)
             return ydot
@@ -163,11 +161,60 @@ def run_model_scipy(S, C, config):
                         max_step=1. * t_sampling,
                 )
 
-        #output = output[-n_samples_per_stim - 1:].T  # last beat
         output = sol.y[:, -n_samples_per_stim - 1:]
         status = sol.status
 
         return status, output
+
+
+def update_S_C_from_genes_current(S, C, genes_current, exp_cond_name, config):
+
+    legend = config['runtime']['legend']
+    genes_dict = config['runtime']['genes_dict']
+    constants_dict = config['runtime']['constants_dict']
+    constants_dict_current = {**constants_dict['common'],
+                              **constants_dict[exp_cond_name]}
+
+    for i, g_name in enumerate(genes_current.index.get_level_values('g_name')):
+
+        if g_name in legend['constants'].index:
+            for ecn in ['common', exp_cond_name]:
+                if g_name in genes_dict[ecn]:
+                    if genes_dict[ecn][g_name]['is_multiplier']:
+                        C[g_name] *= genes_current[ecn, g_name]
+                    else:
+                        C[g_name] = genes_current[ecn, g_name]
+
+        if g_name in legend['states'].index:
+            for ecn in ['common', exp_cond_name]:
+                if g_name in genes_dict[ecn]:
+                    if genes_dict[ecn][g_name]['is_multiplier']:
+                        S[g_name] *= genes_current[ecn, g_name]
+                    else:
+                        S[g_name] = genes_current[ecn, g_name]
+
+    for c_name, c in constants_dict_current.items():
+        if c_name in legend['constants'].index:
+            C[c_name] = c
+        if c_name in legend['states'].index:
+            S[c_name] = c
+
+
+def update_state(organism, genes_current, config, exp_cond_name):
+
+    legend = config['runtime']['legend']
+    genes_dict = config['runtime']['genes_dict']
+
+    for i, g_name in enumerate(genes_current.index.get_level_values('g_name')):
+
+        if g_name in legend['states'].index:
+            for ecn in ['common', exp_cond_name]:
+                if g_name in genes_dict[ecn]:
+                    if genes_dict[ecn][g_name]['is_multiplier']:
+                        organism['genes'][ecn, g_name] = organism['state'][exp_cond_name][g_name] \
+                                                         / legend['states'][g_name]
+                    else:
+                        organism['genes'][ecn, g_name] = organism['state'][exp_cond_name][g_name]
 
 
 def update_phenotype_state(organism, config):
@@ -175,50 +222,16 @@ def update_phenotype_state(organism, config):
     organism['phenotype'] = dict()
 
     legend = config['runtime']['legend']
-    genes_dict = config['runtime']['genes_dict']
-    constants_dict = config['runtime']['constants_dict']
 
     for exp_cond_name in config['experimental_conditions']:
 
         if exp_cond_name == 'common':
             continue
 
-        if exp_cond_name in organism['genes']:
-            genes_current = organism['genes'][['common',
-                                               exp_cond_name]]
-        else:
-            genes_current = organism['genes'][['common']]
+        genes_current = organism['genes'][['common', exp_cond_name]]
 
-        constants_dict_current = {**constants_dict['common'],
-                                  **constants_dict[exp_cond_name]}
-
-        C = legend['constants'].copy()
-        S = organism['state'][exp_cond_name].copy()
-
-        for i in range(len(genes_current)):
-            g_name = genes_current.index.get_level_values('g_name').to_list()[i]
-
-            if g_name in legend['constants'].index:
-                for ecn in ['common', exp_cond_name]:
-                    if g_name in genes_dict[ecn]:
-                        if genes_dict[ecn][g_name]['is_multiplier']:
-                            C[g_name] *= genes_current[ecn, g_name]
-                        else:
-                            C[g_name] = genes_current[ecn, g_name]
-
-            if g_name in legend['states'].index:
-                for ecn in ['common', exp_cond_name]:
-                    if g_name in genes_dict[ecn]:
-                        if genes_dict[ecn][g_name]['is_multiplier']:
-                            S[g_name] *= genes_current[ecn, g_name]
-                        else:
-                            S[g_name] = genes_current[ecn, g_name]
-
-        for c_name, c in constants_dict_current.items():
-            if c_name in legend['constants'].index:
-                C[c_name] = c
-            if c_name in legend['states'].index:
-                S[c_name] = c
+        S, C = organism['state'][exp_cond_name].copy(), legend['constants'].copy()
+        update_S_C_from_genes_current(S, C, genes_current, exp_cond_name, config)
 
         if config.get('use_scipy', False):
             status, res = run_model_scipy(S, C, config)
@@ -226,26 +239,14 @@ def update_phenotype_state(organism, config):
                 return 1
         else:
             stim_protocol = config['experimental_conditions'][exp_cond_name]['stim_protocol']
-            # if stim_protocol is not None:
-            #     stim_protocol = stim_protocol.values.copy()
             status, res = run_model_ctypes(S, C, stim_protocol, config)
             if (status != 2) or np.any(np.isnan(res)):
                 return 1
 
         organism['phenotype'][exp_cond_name] = pd.DataFrame(res.T, columns=legend['states'].index)
+
         organism['state'][exp_cond_name] = organism['phenotype'][exp_cond_name].iloc[-1]
-
-        for i in range(len(genes_current)):
-            g_name = genes_current.index.get_level_values('g_name').to_list()[i]
-
-            if g_name in legend['states'].index:
-                for ecn in ['common', exp_cond_name]:
-                    if g_name in genes_dict[ecn]:
-                        if genes_dict[ecn][g_name]['is_multiplier']:
-                            organism['genes'][ecn, g_name] = organism['state'][exp_cond_name][g_name]\
-                                                             / legend['states'][g_name]
-                        else:
-                            organism['genes'][ecn, g_name] = organism['state'][exp_cond_name][g_name]
+        update_state(organism, genes_current, config, exp_cond_name)
 
     return 0
 
@@ -316,9 +317,12 @@ def update_fitness(organism, config):
 
             # print(weights); exit()
 
-            from sklearn.metrics import mean_squared_error as MSE
-
-            rmse = calculate_RMSE_weightened(phenotype_control, phenotype_model, weights)
+            # rmse = calculate_RMSE_weightened(phenotype_control, phenotype_model, weights)
+            error = (phenotype_control - phenotype_model)**2
+            error[:10] *= 10
+            error = np.sqrt(np.mean(error, axis=0))
+            error *= weights
+            rmse = np.sum(error)
 
             loss += rmse
 
@@ -427,28 +431,20 @@ def save_epoch(population, kw_output):
     backup_filename = kw_output['backup_filename']
     log_filename = kw_output['log_filename']
 
-    #  timer.start('output_sort')
     population = sorted(population, key=lambda organism: organism['fitness'], reverse=True)
-    #  timer.end('output_sort')
 
-    #  timer.start('output_prepare')
     genes = np.array([organism['genes'] for organism in population])
     fitness = np.array([organism['fitness'] for organism in population])
 
     dump_current = np.hstack([genes, fitness[:, None]])
-    #  timer.end('output_prepare')
 
-    #  timer.start('output_dump')
     with open(dump_filename, 'ba+') as file_dump:
         dump_current.astype(np.half).tofile(file_dump)
-    #  timer.end('output_dump')
 
     np.save(dump_last_filename, dump_current)
 
-    # timer.start('output_backup')
     with open(backup_filename, "wb") as file_backup:
         pickle.dump(population, file_backup)
-    # timer.end('output_backup')
 
     with open(log_filename, "a") as file_log:
         s = np.array2string(dump_current[0, :],
@@ -459,48 +455,3 @@ def save_epoch(population, kw_output):
     with open(dump_elite_filename, 'ba+') as f:
         dump_current[0, :].tofile(f)
 
-
-@njit
-def transform_genes_bounds(genes, bounds, gammas, mask_multipliers):
-    assert (len(genes) == len(bounds) == len(gammas) == len(mask_multipliers))
-
-    genes_transformed = np.zeros_like(genes)
-    bounds_transformed = np.zeros_like(bounds)
-
-    scaler_dimensional = 1 / np.sqrt(len(genes))
-    for i in range(len(genes)):
-        lb, ub = bounds[i]
-        gene = genes[i]
-        if mask_multipliers[i]:  # log10 scale
-            bounds_transformed[i, 1] = np.log10(ub / lb) * 1 / (gammas[i] / scaler_dimensional)
-            genes_transformed[i] = np.log10(gene)
-            lb_temp = np.log10(lb)
-            ub_temp = np.log10(ub)
-        else:  # linear scale
-            genes_transformed[i] = gene
-            bounds_transformed[i, 1] = (ub - lb) * 1 / (gammas[i] / scaler_dimensional)
-            lb_temp = lb
-            ub_temp = ub
-        genes_transformed[i] = (genes_transformed[i] - lb_temp) / (ub_temp - lb_temp) * bounds_transformed[i, 1]
-
-    return genes_transformed, bounds_transformed
-
-
-@njit
-def transform_genes_bounds_back(genes_transformed, bounds_transformed, bounds_back, mask_multipliers):
-    assert (len(genes_transformed) == len(bounds_transformed) == len(mask_multipliers))
-
-    genes_back = np.zeros_like(genes_transformed)
-
-    for i in range(len(genes_transformed)):  #log10 scale
-        lb_back, ub_back = bounds_back[i]
-        lb_tran, ub_tran = bounds_transformed[i]
-        gene = genes_transformed[i]
-        if mask_multipliers[i]:
-            genes_back[i] = np.log10(lb_back) + (gene - lb_tran) / (ub_tran - lb_tran) * (
-                        np.log10(ub_back) - np.log10(lb_back))
-            genes_back[i] = np.power(10, genes_back[i])
-        else:# linear scale
-            genes_back[i] = lb_back + (gene - lb_tran) / (ub_tran - lb_tran) * (ub_back - lb_back)
-
-    return genes_back
