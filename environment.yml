@@ -1,18 +1,22 @@
-name: noname
+name: /home/andrey/WORK/HPL/Code/pypoptim/env
 channels:
   - conda-forge
   - defaults
 dependencies:
-  - python=3.8
-  - ipykernel
-  - tqdm
-  - numpy
-  - pandas
-  - seaborn
   - matplotlib
+  - tqdm
+  - pandas
   - ipywidgets
-  - mpi4py
-  - scikit-learn
-  - numba
   - git
-  - GitPython
+  - scikit-learn
+  - python=3.8
+  - numpy
+  - mpi4py
+  - numba
+  - seaborn
+  - gitpython
+  # - ipykernel
+  # - cmaes
+  # - pygmo
+  - deprecated
+prefix: /home/andrey/WORK/HPL/Code/pypoptim/env
