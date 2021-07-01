@@ -1,15 +1,18 @@
 # pypoptim
-Population-based algorithms for global optimization
+Population-based algorithms for global optimization of the cardiac action potential models.
 
-How to do something:
+## Getting started
+1. Download and install [miniconda](https://docs.conda.io/en/latest/miniconda.html#linux-installers).
+2. Create environment (in this folder) and activate it:
 ```sh
 conda env create -f environment.yml --prefix ./env
 conda activate ./env
-mpirun -n 2 python mpi_scripts/cardio/mpi_script.py configs/kernik_clancy/config_syn_IK1_x2_biphasic.json
-conda deactivate  # if you need
 ```
-
-How to remove the environment:
+3. Install `pypoptim` package:
 ```sh
-conda remove --prefix ./env --all
+pip install -e .
+```
+4. Run:
+```sh
+mpirun -n 2 python mpi_scripts/path/to/some/mpi_script.py configs/path/to/some/config.json
 ```
