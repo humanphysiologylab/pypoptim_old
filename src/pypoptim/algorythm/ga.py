@@ -139,36 +139,39 @@ def cauchy_mutation(genes, gamma=1, bounds=None):  # do not change gamma=1
 
 
 def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace=False):
-    n_genes = len(population[0]['genes'])
-    assert (n_genes == len(bounds))
 
-    genes = np.concatenate([organism['genes'].flatten() for organism in population])
+    if len(population):
 
-    p = np.random.random(len(population))
-    shifts = gamma * np.tan(np.pi * (p - 0.5))
+        n_genes = len(population[0]['genes'])
+        assert (n_genes == len(bounds))
 
-    mut_mask = np.random.random(len(population)) <= mutation_rate
-    shifts = shifts * mut_mask
+        genes = np.concatenate([organism['genes'].flatten() for organism in population])
 
-    shifts = np.tile(shifts, (n_genes, 1)).T.flatten()
+        p = np.random.random(len(population))
+        shifts = gamma * np.tan(np.pi * (p - 0.5))
 
-    u = np.random.randn(n_genes * len(population)).reshape((n_genes, len(population)))
-    u = u / np.linalg.norm(u, axis=1)[:, None]
-    u = u.flatten()
+        mut_mask = np.random.random(len(population)) <= mutation_rate
+        shifts = shifts * mut_mask
 
-    shifts = shifts * u
-    lb, ub = np.tile(bounds, (len(population), 1)).T
+        shifts = np.tile(shifts, (n_genes, 1)).T.flatten()
 
-    assert (np.all(lb <= genes) and np.all(genes <= ub)), "genes are outside bounds"
+        u = np.random.randn(n_genes * len(population)).reshape((n_genes, len(population)))
+        u = u / np.linalg.norm(u, axis=1)[:, None]
+        u = u.flatten()
 
-    ptp = ub - lb
-    b = ub - genes
+        shifts = shifts * u
+        lb, ub = np.tile(bounds, (len(population), 1)).T
 
-    shifts = np.remainder(shifts, 2 * ptp)
-    shifts = np.abs(np.abs(shifts - b) - ptp) - (ptp - b)
+        assert (np.all(lb <= genes) and np.all(genes <= ub)), "genes are outside bounds"
 
-    genes = genes + shifts
-    genes = np.reshape(genes, (len(population), n_genes))
+        ptp = ub - lb
+        b = ub - genes
+
+        shifts = np.remainder(shifts, 2 * ptp)
+        shifts = np.abs(np.abs(shifts - b) - ptp) - (ptp - b)
+
+        genes = genes + shifts
+        genes = np.reshape(genes, (len(population), n_genes))
 
     if inplace:
         mutants = population
@@ -203,7 +206,10 @@ def do_step(population, new_size, elite_size, bounds, **kw):
         new_size = len(population)
     new_population = []
 
-    while len(new_population) < new_size - elite_size:
+    elite_size_corrected = min(elite_size, new_size)
+    new_size_without_elites = new_size - elite_size
+
+    while len(new_population) < new_size_without_elites:
         parent1, parent2 = population[0], population[0]
         while parent1 is parent2:
             parent1 = selection(population)
@@ -221,12 +227,13 @@ def do_step(population, new_size, elite_size, bounds, **kw):
             child2 = copy.deepcopy(parent2)
             new_population += [child1, child2]
 
-    new_population = new_population[:new_size - elite_size]  # TODO: sbx_crossover safe processing
+
+    new_population = new_population[:new_size_without_elites]  # TODO: sbx_crossover safe processing
 
     new_population = cauchy_mutation_population(new_population, bounds=bounds, gamma=gamma,
                                                 mutation_rate=mutation_rate, inplace=True)
 
-    new_population += sorted(population, key=lambda organism: organism['fitness'], reverse=True)[:elite_size]
+    new_population += sorted(population, key=lambda organism: organism['fitness'], reverse=True)[:elite_size_corrected]
 
     return new_population
 

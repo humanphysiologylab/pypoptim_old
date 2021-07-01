@@ -16,7 +16,6 @@ dependencies:
   - seaborn
   - gitpython
   # - ipykernel
-  # - cmaes
-  # - pygmo
   - deprecated
+  - pytest
 prefix: /home/andrey/WORK/HPL/Code/pypoptim/env
