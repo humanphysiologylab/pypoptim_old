@@ -3,7 +3,7 @@ import copy
 import numpy as np
 from numba import njit
 
-from src.helpers import cauchy_inverse_cdf, uniform_vector
+from ..helpers import cauchy_inverse_cdf, uniform_vector
 
 
 def tournament_selection(p, k=2):
