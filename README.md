@@ -12,7 +12,13 @@ conda activate ./env
 ```sh
 pip install -e .
 ```
-4. Run:
+
+4. Test:
+```sh
+pytest --pyargs pypoptim
+```
+
+5. Run:
 ```sh
 mpirun -n 2 python mpi_scripts/path/to/some/mpi_script.py configs/path/to/some/config.json
 ```
