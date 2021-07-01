@@ -6,7 +6,7 @@ import pandas as pd
 
 from scipy.integrate import solve_ivp
 
-from src.helpers import RMSE, calculate_mean_abs_noise, calculate_RMSE_weightened, \
+from .helpers import RMSE, calculate_mean_abs_noise, calculate_RMSE_weightened, \
                         calculate_RMSE_balanced, calculate_composite_RMSE_V_CaT, autoscaling, \
                         value_from_bounds
 
