@@ -56,7 +56,9 @@ class GA:
         if keys_data_transmit is not None:
             if not isinstance(keys_data_transmit, (list, tuple)):
                 raise ValueError
-        self._keys_data_transmit = []
+            self._keys_data_transmit = keys_data_transmit
+        else:
+            self._keys_data_transmit = []
 
         self._population = []
 
