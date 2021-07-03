@@ -1,13 +1,16 @@
+import copy
+
+
 class Solution:
 
-    def __init__(self, x=None):
-        self._x = x
+    def __init__(self, x, **kwargs_data):
+        self.x = x
         self._y = None
-        self._data = dict()
+        self._data = copy.deepcopy(kwargs_data)
 
     def __repr__(self):
         s =  'Solution = {\n'
-        s += '    x    = {},\n'.format(self._x)
+        s += '    x    = {},\n'.format(self.x)
         s += '    y    = {},\n'.format(self._y)
         s += '    data = {}\n'.format(self._data)
         s += '}'
@@ -53,26 +56,13 @@ class Solution:
         self._data[key] = value
 
     def __len__(self):
-        return len(self._x)
+        return len(self.x)
 
-
-    # x
-    @property
-    def x(self):
-        return self._x
-
-    @x.setter
-    def x(self, x):
-        self._x = x
 
     # y
     @property
     def y(self):
         return self._y
-
-    @y.setter
-    def y(self, y):
-        self._y = y
 
     # data
     @property
@@ -81,6 +71,8 @@ class Solution:
 
     @data.setter
     def data(self, data):
+        if not isinstance(data, dict):
+            raise ValueError
         self._data = data
 
 
