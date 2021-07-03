@@ -6,9 +6,7 @@ import pandas as pd
 
 from scipy.integrate import solve_ivp
 
-from .helpers import RMSE, calculate_mean_abs_noise, calculate_RMSE_weightened, \
-                        calculate_RMSE_balanced, calculate_composite_RMSE_V_CaT, autoscaling, \
-                        value_from_bounds
+from .helpers import random_value_from_bounds, calculate_mean_abs_noise
 
 from deprecated import deprecated
 
@@ -34,7 +32,7 @@ def create_constants_dict_from_config(config):
 
 def generate_organism(genes_dict, genes_m_index, state):
 
-    genes = [value_from_bounds(gene_params['bounds'], log_scale=gene_params['is_multiplier'])
+    genes = [random_value_from_bounds(gene_params['bounds'], log_scale=gene_params['is_multiplier'])
              if gene_name not in state.index else state[exp_cond_name][gene_name]
              for exp_cond_name, exp_cond in genes_dict.items() for gene_name, gene_params in exp_cond.items()]
 
@@ -63,8 +61,7 @@ def init_population_from_backup(backup, config):
     assert (backup[0]['state'].shape == config['runtime']['states_initial'].shape)
 
     population = [dict(genes=pd.Series(data=organism['genes'], index=config['runtime']['m_index']),
-                       state=pd.DataFrame(data=organism['state'], columns=config['runtime']['states_initial'].columns,
-                                          index=config['runtime']['states_initial'].index))
+                       state=None)
                   for organism in backup]
 
     return population
@@ -200,21 +197,20 @@ def update_S_C_from_genes_current(S, C, genes_current, exp_cond_name, config):
             S[c_name] = c
 
 
-def update_genes_from_state(organism, genes_current, config, exp_cond_name):
+def update_genes_from_state(genes, state, config, exp_cond_name):
 
     legend = config['runtime']['legend']
     genes_dict = config['runtime']['genes_dict']
 
-    for i, g_name in enumerate(genes_current.index.get_level_values('g_name')):
+    for i, g_name in enumerate(genes.index.get_level_values('g_name')):
 
         if g_name in legend['states'].index:
             for ecn in ['common', exp_cond_name]:
                 if g_name in genes_dict[ecn]:
                     if genes_dict[ecn][g_name]['is_multiplier']:
-                        organism['genes'][ecn, g_name] = organism['state'][exp_cond_name][g_name] \
-                                                         / legend['states'][g_name]
+                        genes[ecn, g_name] = state[exp_cond_name][g_name] / legend['states'][g_name]
                     else:
-                        organism['genes'][ecn, g_name] = organism['state'][exp_cond_name][g_name]
+                        genes[ecn, g_name] = state[exp_cond_name][g_name]
 
 
 def update_phenotype_state(organism, config):
@@ -246,7 +242,7 @@ def update_phenotype_state(organism, config):
         organism['phenotype'][exp_cond_name] = pd.DataFrame(res.T, columns=legend['states'].index)
 
         organism['state'][exp_cond_name] = organism['phenotype'][exp_cond_name].iloc[-1]
-        update_genes_from_state(organism, genes_current, config, exp_cond_name)
+        update_genes_from_state(organism['genes'], organism['state'], config, exp_cond_name)
 
     return 0
 

@@ -29,7 +29,7 @@ def random_value_from_bounds(bounds, log_scale=False):
         raise ValueError
     r = np.random.random()
     if log_scale:
-        return (bounds[0] ** (1 - r)) * (bounds ** r)
+        return (bounds[0] ** (1 - r)) * (bounds[1] ** r)
     else:
         return bounds[0] * (1 - r) + bounds[1] * r
 
