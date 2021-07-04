@@ -1,10 +1,11 @@
 import copy
+from typing import final
 
 
 class Solution:
 
     def __init__(self, x, **kwargs_data):
-        self.x = x
+        self._x = x
         self._y = None
         self._data = copy.deepcopy(kwargs_data)
 
@@ -56,8 +57,18 @@ class Solution:
         self._data[key] = value
 
     def __len__(self):
-        return len(self.x)
+        return len(self._x)
 
+
+    #x
+    @property
+    def x(self):
+        return self._x
+
+    @x.setter
+    def x(self, x_new):
+        self._x = x_new
+        self._y = None
 
     # y
     @property
@@ -78,6 +89,10 @@ class Solution:
 
     def update(self, *args, **kwargs) -> None:
         raise NotImplementedError("You must implement this method on your side!")
+
+    @final
+    def is_updated(self) -> bool:
+        return self._y is not None
 
     def is_valid(self) -> bool:
         raise NotImplementedError("You must implement this method on your side!")

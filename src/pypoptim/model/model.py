@@ -33,6 +33,11 @@ class CardiacModel:
         self._status = None
 
 
+    @property
+    def status(self):
+        return self._status
+
+
     def run(self, S, C, **kwargs):
 
         stim_period = C[kwargs['stim_period_legend_name']]
