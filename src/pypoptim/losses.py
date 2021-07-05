@@ -5,16 +5,19 @@ from sklearn.metrics import mean_squared_error as MSE
 def RMSE(x, y):
     return MSE(x, y, squared=False)
 
-def calculate_RMSE(x, y):
+
+def calculate_RMSE(x, y) -> float:
     assert(len(x) == len(y))
     return np.sqrt(np.mean(((x - y)**2)))
 
-def calculate_RMSE_balanced(x, y):
+
+def calculate_RMSE_balanced(x, y) -> float:
     assert(len(x) == len(y))
     x = (x - y.min(axis=0)) / y.ptp(axis=0)
     y = (y - y.min(axis=0)) / y.ptp(axis=0)
     return np.sqrt(np.sum(((x - y)**2)) / len(x))
 
 
-def calculate_RMSE_weightened(x, y, weights):
-    return np.sum(MSE(x, y, squared=False, multioutput='raw_values') * weights)
+def calculate_RMSE_weightened(x, y, weights) -> float:
+    return float(np.sum(MSE(x, y, squared=False, multioutput='raw_values') * weights))
+

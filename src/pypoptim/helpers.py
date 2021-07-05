@@ -134,8 +134,6 @@ def autoscaling(signal_to_scale, signal_reference):
     def scalar_multiplications(a, b):
         if len(a) != len(b):
             raise ValueError
-        if a.size != b.size:
-            raise ValueError
         coefficients = np.array([np.dot(a, b),
                                  np.sum(a),
                                  np.sum(b),
