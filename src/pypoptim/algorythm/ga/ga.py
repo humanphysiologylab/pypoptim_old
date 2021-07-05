@@ -113,13 +113,13 @@ class GA:
 
     def _transform_solution(self, sol):
         sol_transformed = self._SolutionSubclass(self._transform_genes(sol.x), **sol.data)
-        sol_transformed._y = sol.y  # dirty hack, TODO: think 'bout
+        sol_transformed._y = sol.y
         return sol_transformed
 
     def _transform_solution_back(self, sol_transformed):
         genes = self._transform_genes_back(sol_transformed.x)
         sol = self._SolutionSubclass(genes, **sol_transformed.data)
-        sol._y = sol_transformed.y  # dirty hack, TODO: think 'bout
+        sol._y = sol_transformed.y
         return sol
 
     def generate_solution(self) -> Solution:
@@ -178,7 +178,7 @@ class GA:
                 child2 = copy.deepcopy(parent2_transformed)
                 new_population += [child1, child2]
 
-        new_population = new_population[:size]  # TODO: sbx_crossover creates pairs so this is for odd size of the population
+        new_population = new_population[:size]  # sbx_crossover creates pairs so this is for odd size of the population
 
         # return new_population
 
