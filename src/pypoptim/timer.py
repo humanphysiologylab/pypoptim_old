@@ -1,18 +1,19 @@
 import time
 
+
 class Timer:
 
     def __init__(self):
         self.times = dict()
         self.total = None
 
-    def start(self, name):
+    def start(self, name) -> None:
         self.times[name] = -time.time()
 
-    def end(self, name):
+    def end(self, name) -> None:
         self.times[name] += time.time()
 
-    def report(self, sort=False):
+    def report(self, sort=False) -> str:
         total = sum(self.times.values())
         self.times['total'] = total
         times = dict(sorted(self.times.items(), key=lambda x: x[1], reverse=True) if sort else self.times)
@@ -20,6 +21,6 @@ class Timer:
         del self.times['total']
         return s
 
-    def clear(self):
+    def clear(self) -> None:
         del self.times
         self.times = dict()
