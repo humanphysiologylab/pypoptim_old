@@ -145,6 +145,8 @@ class GA:
 
     def get_mutants(self, population, size=1):
 
+        if not len(population):
+            raise ValueError
         if not isinstance(size, int):
             raise TypeError
         if size < 0:
@@ -153,8 +155,7 @@ class GA:
         new_population = []
 
         while len(new_population) < size:
-            if not len(population):
-                raise ValueError
+
             parent1, parent2 = population[0], population[0]
             while parent1 is parent2:
                 parent1 = self._selection(population)

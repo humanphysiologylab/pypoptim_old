@@ -22,12 +22,12 @@ class Solution:
 
 
     def __eq__(self, other):
-        if not (self.is_valid() and other.is_valid()):
+        if not (self.is_updated() and other.is_updated()):
             raise ValueError("Can't compare invalid Solutions")
         return self.y == other.y
 
     def __gt__(self, other):
-        if not (self.is_valid() and other.is_valid()):
+        if not (self.is_updated() and other.is_updated()):
             raise ValueError("Can't compare invalid Solutions")
         return self.y > other.y
 
