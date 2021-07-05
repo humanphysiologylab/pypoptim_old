@@ -53,7 +53,7 @@ def ma(x, n):
 
 
 def calculate_mean_abs_noise(array, n=31):
-    array_ma = np.apply_along_axis(func1d=ma, axis=0, arr=array, N=n)
+    array_ma = np.apply_along_axis(func1d=ma, axis=0, arr=array, n=n)
     array_valid = array[n//2: n//2 + len(array_ma)]
     noise = np.mean(np.abs(array_valid - array_ma), axis=0)
     return noise
@@ -127,3 +127,31 @@ def strip_comments(code, comment_char='#'):
         lines.append(line)
     code = '\n'.join(lines)
     return code
+
+
+def autoscaling(signal_to_scale, signal_reference):
+
+    def scalar_multiplications(a, b):
+        if len(a) != len(b):
+            raise ValueError
+        if a.size != b.size:
+            raise ValueError
+        coefficients = np.array([np.dot(a, b),
+                                 np.sum(a),
+                                 np.sum(b),
+                                 np.sum(a**2),
+                                 len(a)])
+        return coefficients
+
+    c = scalar_multiplications(signal_to_scale, signal_reference)
+
+    if c[1] == 0 or c[1] * c[1] - c[4] * c[3] == 0:
+        alpha = 0
+        beta = 0
+    else:
+        beta = (c[0] * c[1] - c[2] * c[3]) / (c[1] * c[1] - c[4] * c[3])
+        alpha = (c[2] - beta * c[4]) / c[1]
+
+    signal_scaled = signal_to_scale * alpha + beta
+
+    return signal_scaled, (alpha, beta)
