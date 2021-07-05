@@ -3,6 +3,10 @@ import numpy as np
 from numba import njit
 
 
+def argmax(l):
+    return max(enumerate(l), key=lambda x: x[1])[0]
+
+
 def argmax_list_of_dicts(l, key):
     return max(enumerate(l), key=lambda x: x[1][key])[0]
 

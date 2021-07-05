@@ -1,1 +1,1 @@
-from .model import CardiacModel
+from .cardiac_model import CardiacModel
