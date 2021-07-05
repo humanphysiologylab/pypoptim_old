@@ -78,14 +78,17 @@ class GA:
 
 
     def __repr__(self):
+
+        hstack = np.hstack([self._bounds,
+                            self._gammas.reshape(-1, 1),
+                            self._mask_log10_scale.reshape(-1, 1)])
         s =  f'{self.__class__.__name__}:\n'
-        s += f'    bounds = {self._bounds}\n'
-        s += f'    gammas = {self._gammas}\n'
-        s += f'    mask_log10_scale = {self._mask_log10_scale}\n'  # TODO: transpose __repr__
-        s += f'    mutation_rate   = {self._mutation_rate}\n'
-        s += f'    crossover_rate  = {self._crossover_rate}\n'
-        s += f'    selection_force = {self._selection_force}\n'
-        s += f'    keys_data_transmit = {self._keys_data_transmit}\n'
+        s += f'[bounds_lower bounds_upper gammas mask_log_10_scale]\n'
+        s += str(hstack) + "\n"
+        s += f'mutation_rate: {self._mutation_rate}\n'
+        s += f'crossover_rate: {self._crossover_rate}\n'
+        s += f'selection_force: {self._selection_force}\n'
+        s += f'keys_data_transmit: {self._keys_data_transmit}\n'
         return s
 
     def __str__(self):
