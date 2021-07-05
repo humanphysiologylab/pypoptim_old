@@ -3,6 +3,11 @@ import numpy as np
 from numba import njit
 
 
+def uniform_vector(n=1):
+    u = np.random.randn(n)
+    return u / np.linalg.norm(u)
+
+
 def argmax(l):
     return max(enumerate(l), key=lambda x: x[1])[0]
 

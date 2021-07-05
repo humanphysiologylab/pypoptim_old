@@ -1,11 +1,10 @@
 import copy
-import random
-
 import numpy as np
 
 from pypoptim.helpers import random_value_from_bounds,\
                              transform_genes_bounds,\
                              transform_genes_bounds_back
+from .selection import tournament_selection
 from .crossover import sbx_crossover
 from .mutation import cauchy_mutation_population
 from ..solution import Solution
@@ -138,7 +137,7 @@ class GA:
             sol_child[key] = sol_parent[key]
 
     def _selection(self, population) -> Solution:  # tournament selection
-        return min(random.sample(population, self._selection_force))
+        return tournament_selection(population, self._selection_force)
 
     def _crossover(self, genes1, genes2) -> tuple:
         return sbx_crossover(genes1, genes2, bounds=self._bounds_transformed)

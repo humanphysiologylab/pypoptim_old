@@ -1,10 +1,7 @@
 import numpy as np
 import copy
 
-
-def uniform_vector(n=1):
-    u = np.random.randn(n)
-    return u / np.linalg.norm(u)
+from ...helpers import uniform_vector
 
 
 def cauchy_inverse_cdf(gamma):
