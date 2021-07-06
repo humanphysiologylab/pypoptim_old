@@ -12,6 +12,10 @@ def argmax(l):
     return max(enumerate(l), key=lambda x: x[1])[0]
 
 
+def argmin(l):
+    return min(enumerate(l), key=lambda x: x[1])[0]
+
+
 def argmax_list_of_dicts(l, key):
     return max(enumerate(l), key=lambda x: x[1][key])[0]
 
