@@ -131,7 +131,7 @@ dmypy.json
 
 # Added by Andrey
 .idea
-results/
+results
 images/
 
 data/voigt
@@ -146,3 +146,5 @@ configs/*/*/
 mpi_scripts/slurm/slurm-*.out
 publication
 /mpi_scripts/slurm/
+
+notebooks
