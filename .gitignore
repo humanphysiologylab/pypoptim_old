@@ -148,3 +148,4 @@ publication
 /mpi_scripts/slurm/
 
 notebooks
+mpi_scripts/*/*.ipynb
