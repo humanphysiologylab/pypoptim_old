@@ -1,7 +1,7 @@
 numpy~=1.20.2
 pandas~=1.2.4
 numba~=0.53.1
-pypoptim~=1.0.0
+pypoptim>=2.0.0
 scikit-learn~=0.24.2
 matplotlib~=3.4.2
 setuptools~=49.6.0

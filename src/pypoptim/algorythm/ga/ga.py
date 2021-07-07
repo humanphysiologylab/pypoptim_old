@@ -1,4 +1,5 @@
 import copy
+
 import numpy as np
 
 from pypoptim.helpers import random_value_from_bounds,\
@@ -9,6 +10,8 @@ from .crossover import sbx_crossover
 from .mutation import cauchy_mutation_population
 from ..solution import Solution
 
+import logging
+logger = logging.getLogger(__name__)
 
 class GA:
 
@@ -211,11 +214,27 @@ class GA:
         return np.all((bounds[:, 0] < sol.x) & (sol.x < bounds[:, 1]))
 
     def filter_population(self, population) -> list:
-        def condition(sol):
-            result = sol.is_updated() & sol.is_valid()
-            result &= self._is_solution_inside_bounds(sol)
-            return result
-        return [sol for sol in population if condition(sol)]
+
+        logger.info('filter_population: START')
+
+        population_filtered = []
+        for i, sol in enumerate(population):
+            if not sol.is_updated():
+                logger.info(f'  {i}: not updated')
+                continue
+            if not sol.is_valid():
+                logger.info(f'  {i} not valid')
+                continue
+            if not self._is_solution_inside_bounds(sol):
+                logger.info(f'  {i} outside bounds')
+                continue
+            logger.info(f'  {i} kept')
+
+            population_filtered.append(sol)
+
+        logger.info('filter_population: END')
+
+        return population_filtered
 
 
     def run(self, n_solutions, n_epochs=1, n_elites=0):
