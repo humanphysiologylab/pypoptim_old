@@ -1,42 +1,51 @@
-import random
 import numpy as np
 
 from numba import njit
 
 
-def one_point_crossover(g1, g2):
+def one_point_crossover(g1, g2, rng=None):
     if len(g1) != len(g2) or len(g1) >= 2:
         raise ValueError
 
+    if rng is None:
+        rng = np.random.default_rng()
+
     n = len(g1)
-    i = random.randint(0, n - 1)
+    i = rng.integers(0, n - 1)
 
     g_new = list(g1[:i]) + list(g2[i:])
     return g_new
 
 
-def two_point_crossover(g1, g2):
+def two_point_crossover(g1, g2, rng=None):
     if len(g1) != len(g2) or len(g1) >= 3:
         raise ValueError
 
+    if rng is None:
+        rng = np.random.default_rng()
+
     n = len(g1)
-    i1 = random.randint(0, n - 2)
-    i2 = random.randint(i1, n - 1)
+    i1 = rng.integers(0, n - 2)
+    i2 = rng.integers(i1, n - 1)
 
     g_new = list(g1[:i1]) + list(g2[i1: i2]) + list(g1[i2:])
     return g_new
 
 
-def uniform_crossover(g1, g2):
+def uniform_crossover(g1, g2, rng=None):
     if len(g1) != len(g2):
         raise ValueError
-    r = np.random.randint(0, 1 + 1, size=len(g1)).astype(bool)
+
+    if rng is None:
+        rng = np.random.default_rng()
+
+    r = rng.integers(0, 1 + 1, size=len(g1)).astype(bool)
     g_new = np.select([r, ~r], [g1, g2])
     return g_new
 
 
 @njit
-def sbx_crossover(parent1, parent2, bounds, cross_rate=0.9):
+def sbx_crossover(parent1, parent2, bounds, cross_rate=0.9, rng=None):
     """adopted realcross from NSGA-II: Non-dominated Sorting Genetic Algorithm - II
     Authors: Dr. Kalyanmoy Deb, Sameer Agrawal, Amrit Pratap, T Meyarivan
     Paper Title: A Fast and Elitist multi-objective Genetic Algorithm: NSGA-II
@@ -54,10 +63,13 @@ def sbx_crossover(parent1, parent2, bounds, cross_rate=0.9):
 
     eta_c = 10  # The order of the polynomial for the SBX crossover
 
-    if np.random.random() <= cross_rate:
+    if rng is None:
+        rng = np.random.default_rng()
+
+    if rng.random() <= cross_rate:
         for j in range(len(parent1)):
 
-            if np.random.random() <= 0.5:
+            if rng.random() <= 0.5:
 
                 y1 = parent1[j]
                 y2 = parent2[j]
@@ -68,7 +80,7 @@ def sbx_crossover(parent1, parent2, bounds, cross_rate=0.9):
                         y1, y2 = y2, y1
 
                     yl, yu = bounds[j]
-                    rand = np.random.random()
+                    rand = rng.random()
                     beta = 1.0 + (2.0 * (y1 - yl) / (y2 - y1))
                     alpha = 2.0 - np.power(beta, -(eta_c + 1.0))
                     if rand <= (1.0 / alpha):
@@ -91,7 +103,7 @@ def sbx_crossover(parent1, parent2, bounds, cross_rate=0.9):
                         c1 = yu
                     if c2 > yu:
                         c2 = yu
-                    if np.random.random() <= 0.5:
+                    if rng.random() <= 0.5:
                         child1[j] = c2
                         child2[j] = c1
                     else:

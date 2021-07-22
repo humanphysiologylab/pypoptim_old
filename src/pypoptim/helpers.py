@@ -3,8 +3,10 @@ import numpy as np
 from numba import njit
 
 
-def uniform_vector(n=1):
-    u = np.random.randn(n)
+def uniform_vector(n=1, rng=None):
+    if rng is None:
+        rng = np.random.default_rng()
+    u = rng.standard_normal(n)
     return u / np.linalg.norm(u)
 
 
@@ -37,10 +39,12 @@ def batches_from_list(l, n_batches=1):
     return [l[i::n_batches] for i in range(n_batches)]
 
 
-def random_value_from_bounds(bounds, log_scale=False):
+def random_value_from_bounds(bounds, log_scale=False, rng=None):
     if len(bounds) != 2 or bounds[0] >= bounds[1]:
         raise ValueError
-    r = np.random.random()
+    if rng is None:
+        rng = np.random.default_rng()
+    r = rng.random()
     if log_scale:
         return (bounds[0] ** (1 - r)) * (bounds[1] ** r)
     else:
