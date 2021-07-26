@@ -147,5 +147,5 @@ mpi_scripts/slurm/slurm-*.out
 publication
 /mpi_scripts/slurm/
 
-notebooks
+*notebooks
 mpi_scripts/*/*.ipynb
