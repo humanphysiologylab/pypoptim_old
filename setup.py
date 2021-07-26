@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='pypoptim',
-    version='2.0.2',
+    version='2.1.0',
     packages=["pypoptim"],
     package_dir={"": "src"},
     url='https://github.com/humanphysiologylab/pypoptim',

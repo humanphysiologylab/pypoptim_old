@@ -4,8 +4,10 @@ import copy
 from ...helpers import uniform_vector
 
 
-def cauchy_inverse_cdf(gamma):
-    return gamma * np.tan(np.pi * (np.random.rand() - 0.5))
+def cauchy_inverse_cdf(gamma, rng):
+    if rng is None:
+        rng = np.random.default_rng()
+    return gamma * np.tan(np.pi * (rng.random() - 0.5))
 
 
 def cauchy_mutation(genes, gamma=1, bounds=None):  # do not change gamma=1
@@ -34,7 +36,10 @@ def cauchy_mutation(genes, gamma=1, bounds=None):  # do not change gamma=1
     return genes_new
 
 
-def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace=False):
+def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace=False, rng=None):
+
+    if rng is None:
+        rng = np.random.default_rng()
 
     if len(population):
 
@@ -44,15 +49,15 @@ def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace
 
         genes = np.concatenate([organism.x.flatten() for organism in population])
 
-        p = np.random.random(len(population))
+        p = rng.random(len(population))
         shifts = gamma * np.tan(np.pi * (p - 0.5))
 
-        mut_mask = np.random.random(len(population)) <= mutation_rate
+        mut_mask = rng.random(len(population)) <= mutation_rate
         shifts = shifts * mut_mask
 
         shifts = np.tile(shifts, (n_genes, 1)).T.flatten()
 
-        u = np.random.randn(n_genes * len(population)).reshape((n_genes, len(population)))
+        u = rng.standard_normal(n_genes * len(population)).reshape((n_genes, len(population)))
         u = u / np.linalg.norm(u, axis=1)[:, None]
         u = u.flatten()
 

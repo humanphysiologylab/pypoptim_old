@@ -17,7 +17,7 @@ class GA:
 
     def __init__(self, SolutionSubclass, bounds, gammas=None, mask_log10_scale=None,
                  mutation_rate=1., crossover_rate=1., selection_force=2,
-                 keys_data_transmit=None):
+                 keys_data_transmit=None, rng=None):
 
         if not issubclass(SolutionSubclass, Solution):
             raise TypeError
@@ -74,11 +74,17 @@ class GA:
 
         if keys_data_transmit is not None:
             if not isinstance(keys_data_transmit, (list, tuple)):
-                raise ValueError
+                raise TypeError
             self._keys_data_transmit = keys_data_transmit
         else:
             self._keys_data_transmit = []
 
+        if rng is not None:
+            if not isinstance(rng, np.random._generator.Generator):
+                raise TypeError
+            self._rng = rng
+        else:
+            self._rng = np.random.default_rng()
 
     def __repr__(self):
 
@@ -126,7 +132,7 @@ class GA:
         return sol
 
     def generate_solution(self) -> Solution:
-        genes_transformed = [random_value_from_bounds(self._bounds_transformed[i])
+        genes_transformed = [random_value_from_bounds(self._bounds_transformed[i], rng=self._rng)
                              for i in range(self._n_genes)]
         genes_transformed = np.array(genes_transformed)
         genes = self._transform_genes_back(genes_transformed)
@@ -143,10 +149,10 @@ class GA:
             sol_child[key] = sol_parent[key]
 
     def _selection(self, population) -> Solution:  # tournament selection
-        return tournament_selection(population, self._selection_force)
+        return tournament_selection(population, self._selection_force, rng=self._rng)
 
     def _crossover(self, genes1, genes2) -> tuple:
-        return sbx_crossover(genes1, genes2, bounds=self._bounds_transformed)
+        return sbx_crossover(genes1, genes2, bounds=self._bounds_transformed, rng=self._rng)
 
     def get_mutants(self, population, size=1):
 
@@ -168,7 +174,7 @@ class GA:
 
             parent1_transformed, parent2_transformed = [self._transform_solution(p) for p in (parent1, parent2)]
 
-            if np.random.random() <= self._crossover_rate:
+            if self._rng.random() <= self._crossover_rate:
                 offspring_genes = self._crossover(parent1_transformed.x,
                                                   parent2_transformed.x)
                 parent_data_transmitter = min(parent1_transformed, parent2_transformed)
@@ -189,7 +195,8 @@ class GA:
                                    bounds=self._bounds_transformed,
                                    gamma=self.__gamma_default,
                                    mutation_rate=self._mutation_rate,
-                                   inplace=True)
+                                   inplace=True,
+                                   rng=self._rng)
 
         new_population = [self._transform_solution_back(sol) for sol in new_population]
 
@@ -228,8 +235,8 @@ class GA:
             if not self._is_solution_inside_bounds(sol):
                 logger.info(f'  {i} outside bounds')
                 continue
-            logger.info(f'  {i} kept')
 
+            logger.info(f'  {i} kept')
             population_filtered.append(sol)
 
         logger.info('filter_population: END')
