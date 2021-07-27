@@ -38,7 +38,7 @@ def cauchy_mutation(genes, gamma=1, bounds=None, rng=None):  # do not change gam
     return genes_new
 
 
-def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace=False, rng=None):
+def cauchy_mutation_population(population, bounds, gamma, mutation_rate, rng=None):
 
     if rng is None:
         rng = np.random.default_rng()
@@ -54,7 +54,7 @@ def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace
         p = rng.random(len(population))
         shifts = gamma * np.tan(np.pi * (p - 0.5))
 
-        mut_mask = rng.random(len(population)) <= mutation_rate
+        mut_mask = rng.random(len(population)) < mutation_rate
         shifts = shifts * mut_mask
 
         shifts = np.tile(shifts, (n_genes, 1)).T.flatten()
@@ -80,13 +80,17 @@ def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace
     else:
         genes = []
 
-    if inplace:
-        mutants = population
-    else:
-        mutants = copy.deepcopy(population)
+    mutants = copy.deepcopy(population)
 
     for i in range(len(mutants)):
         mutants[i].x = genes[i]
 
-    if not inplace:
-        return mutants
+    return mutants
+
+
+def reflection(ub, lb, genes, shifts):
+    ptp = ub - lb
+    b = ub - genes
+    shifts = np.remainder(shifts, 2 * ptp)
+    shifts = np.abs(np.abs(shifts - b) - ptp) - (ptp - b)
+    return shifts
