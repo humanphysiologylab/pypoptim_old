@@ -1,6 +1,7 @@
 import pytest
 
 from ....algorythm.ga.mutation import cauchy_inverse_cdf, cauchy_mutation, cauchy_mutation_population, reflection
+from ....helpers import is_values_inside_bounds
 import numpy as np
 
 
@@ -23,9 +24,20 @@ def test_cauchy_mutation():
     x = [cauchy_mutation(genes=genes, rng=np.random.default_rng(seed)) for _ in range(2)]
     assert x[0] == x[1]
 
+    bounds = [[0, 1],
+              [0, 1]]
+    genes = [0.5, 0.5]
+    values = cauchy_mutation(genes=genes, bounds=bounds, rng=np.random.default_rng(seed))
+    assert is_values_inside_bounds(values, bounds)
+
+    with pytest.raises(ValueError):
+        genes = [-1000, 1000]
+        cauchy_mutation(genes=genes, bounds=bounds, rng=np.random.default_rng(seed))
+
 
 def test_cauchy_mutation_population(population):
-    bounds = [[-5, 5], [3, 13]]
+    bounds = np.asfarray([[-5, 5],
+                          [3, 13]])
     n_organisms = 0
     p = population(n_organisms, bounds=bounds)
     new_p = cauchy_mutation_population(population=p, bounds=bounds, gamma=1, mutation_rate=1)
@@ -34,8 +46,13 @@ def test_cauchy_mutation_population(population):
     n_organisms = 2
     p = population(n_organisms, bounds=bounds)
     with pytest.raises(ValueError):
-        cauchy_mutation_population(population=p, bounds=bounds * 2, gamma=1, mutation_rate=0)
+        cauchy_mutation_population(population=p, bounds=bounds[:-1], gamma=1, mutation_rate=0)
 
+    p[0].x = bounds[:, 0] - 1
+    with pytest.raises(ValueError):
+        cauchy_mutation_population(population=p, bounds=bounds, gamma=1, mutation_rate=1)
+
+    p = population(n_organisms, bounds=bounds)
     for g, mut in zip([0, 1], [1, 0]):
         new_p = cauchy_mutation_population(population=p, bounds=bounds, gamma=g, mutation_rate=mut)
         for organism, new_organism in zip(p, new_p):
@@ -55,21 +72,3 @@ def test_cauchy_mutation_population(population):
 
     assert new_p[0] == new_p[1]
 
-
-def test_reflection():
-    ub = np.array([1])
-    lb = np.array([0])
-    genes = np.array([0.5])
-    shifts = np.array([0.25])
-    genes_after = reflection(ub=ub, lb=lb, genes=genes, shifts=shifts)
-    assert genes_after == np.array([0.75])
-
-    shifts = np.array([1.3])
-    genes_after = reflection(ub=ub, lb=lb, genes=genes, shifts=shifts)
-    genes_expected = np.array([0.2])
-    assert np.allclose(genes_after, genes_expected)
-
-    shifts = np.array([-5.3])
-    genes_after = reflection(ub=ub, lb=lb, genes=genes, shifts=shifts)
-    genes_expected = np.array([0.8])
-    assert np.allclose(genes_after, genes_expected)

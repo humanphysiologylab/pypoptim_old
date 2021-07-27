@@ -35,6 +35,11 @@ def batches_from_list(l, n_batches=1):
     return [l[i::n_batches] for i in range(n_batches)]
 
 
+def is_values_inside_bounds(values, bounds):
+    values, bounds = map(np.asfarray, [values, bounds])
+    return np.all((bounds[:, 0] < values) & (values < bounds[:, 1]))
+
+
 def random_value_from_bounds(bounds, log_scale=False, rng=None):
     if len(bounds) != 2 or bounds[0] >= bounds[1]:
         raise ValueError
@@ -159,3 +164,16 @@ def autoscaling(signal_to_scale, signal_reference):
     signal_scaled = signal_to_scale * alpha + beta
 
     return signal_scaled, (alpha, beta)
+
+
+def reflection(ub, lb, values, shifts):
+    bounds = np.vstack([lb, ub]).T
+    if not is_values_inside_bounds(values, bounds):
+        raise ValueError
+    ptp = ub - lb
+    b = ub - values
+    shifts = np.remainder(shifts, 2 * ptp)
+    shifts = np.abs(np.abs(shifts - b) - ptp) - (ptp - b)
+    result = values + shifts
+    return result
+

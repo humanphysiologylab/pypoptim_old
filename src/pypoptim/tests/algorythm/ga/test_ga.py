@@ -1,39 +1,5 @@
 import pytest
 import numpy as np
-from ....algorythm.ga.ga import GA
-
-
-@pytest.fixture()
-def ga_optim_fabric(square_solution):
-    def _ga_optim_fabric(**kw):
-        bounds = np.asfarray([[-1, 1],
-                              [2, 4]])
-        rng = np.random.default_rng(42)
-        return GA(SolutionSubclass=square_solution,
-                  bounds=bounds,
-                  rng=rng,
-                  **kw)
-    return _ga_optim_fabric
-
-
-@pytest.fixture()
-def ga_optim_default(ga_optim_fabric):
-    return ga_optim_fabric()
-
-
-@pytest.fixture()
-def ga_optim_with_data(ga_optim_fabric):
-    keys_data_transmit = ['state']
-    ga_optim_fabric(keys_data_transmit=keys_data_transmit)
-
-@pytest.fixture()
-def ga_optim_for_is_valid(ga_optim_fabric):
-    ga_optim = ga_optim_fabric()
-    class SS(ga_optim._SolutionSubclass):
-        def is_valid(self):
-            return np.all(self.x > 0)
-    ga_optim._SolutionSubclass = SS
-    return ga_optim
 
 
 class TestGA:
@@ -119,11 +85,58 @@ class TestGA:
     def test_transmit_solution_data(self):
         assert 0
 
-    def test_get_mutants(self):
-        assert 0
+    def test_get_mutants(self, ga_optim_with_data):
 
-    def test_get_elites(self, ):
-        assert 0
+        for n in range(2):
+            with pytest.raises(ValueError):
+                population = ga_optim_with_data.generate_population(n)
+                ga_optim_with_data.get_mutants(population)
+
+        n = 3
+        population = ga_optim_with_data.generate_population(n)
+        ga_optim_with_data.update_population(population)
+        for i, sol in enumerate(sorted(population)):
+            sol['state'] = str(i)
+
+        for size in '1.0', 1.0:
+            with pytest.raises(TypeError):
+                ga_optim_with_data.get_mutants(population, size)
+
+        with pytest.raises(ValueError):
+            ga_optim_with_data.get_mutants(population, -1)
+
+        ga_optim_with_data._crossover_rate = 0
+        ga_optim_with_data._mutation_rate = 0
+
+        mutants = ga_optim_with_data.get_mutants(population, 2)
+        population_sorted = sorted(population)
+        assert min(mutants) == population_sorted[0] and min(mutants)['state'] == '0'
+        assert max(mutants) == population_sorted[1] and max(mutants)['state'] == '1'
+
+    def test_get_elites(self, ga_optim_default):
+
+        n = 10
+        population = ga_optim_default.generate_population(n)
+
+        for size in 1., '1.0':
+            with pytest.raises(TypeError):
+                ga_optim_default.get_elites(population, size)
+
+        for size in -1, n + 1:
+            with pytest.raises(ValueError):
+                ga_optim_default.get_elites(population, size)
+
+        ga_optim_default.update_population(population)
+        elites = ga_optim_default.get_elites(population, size=n)
+        assert len(population) == len(elites)
+        assert elites == sorted(elites)
+
+        elites = ga_optim_default.get_elites(population, size=0)
+        assert len(elites) == 0
+
+        elites = ga_optim_default.get_elites(population, size=2)
+        assert elites[0] <= elites[1]
+
 
     def test_run(self):
         assert 0

@@ -25,7 +25,7 @@ def test_sbx_crossover():
     assert np.all(children1 == children2) and np.all(children1 == parents[0])
 
     with pytest.raises(ValueError):
-        children1, children2 = sbx_crossover(parent1=parents[0][:2], parent2=parents[1], bounds=bounds)
+        sbx_crossover(parent1=parents[0][:2], parent2=parents[1], bounds=bounds)
 
     seed = 888
     parents =[[1.5, 0.1, 1], [0, 0, 0]]

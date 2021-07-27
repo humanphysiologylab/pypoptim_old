@@ -4,7 +4,8 @@ import numpy as np
 
 from pypoptim.helpers import random_value_from_bounds,\
                              transform_genes_bounds,\
-                             transform_genes_bounds_back
+                             transform_genes_bounds_back, \
+                             is_values_inside_bounds
 from .selection import tournament_selection
 from .crossover import sbx_crossover
 from .mutation import cauchy_mutation_population
@@ -152,15 +153,19 @@ class GA:
             sol_child[key] = sol_parent[key]
 
     def _selection(self, population) -> Solution:  # tournament selection
-        return tournament_selection(population, self._selection_force, rng=self._rng)
+        return tournament_selection(np.array(population, dtype=object),
+                                    self._selection_force, rng=self._rng)
 
     def _crossover(self, genes1, genes2) -> tuple:
-        return sbx_crossover(genes1, genes2, bounds=self._bounds_transformed, rng=self._rng)
+        return sbx_crossover(genes1, genes2,
+                             bounds=self._bounds_transformed,
+                             cross_rate=self._crossover_rate,
+                             rng=self._rng)
 
     def get_mutants(self, population, size=1):
 
-        if not len(population):
-            raise ValueError
+        if len(population) < 3:
+            raise ValueError("Insufficient number of solution for the crossover")
         if not isinstance(size, int):
             raise TypeError
         if size < 0:
@@ -192,8 +197,6 @@ class GA:
 
         new_population = new_population[:size]  # sbx_crossover creates pairs so this is for odd size of the population
 
-        # return new_population
-
         cauchy_mutation_population(new_population,
                                    bounds=self._bounds_transformed,
                                    gamma=self.__gamma_default,
@@ -211,8 +214,6 @@ class GA:
         if not (0 <= size <= len(population)):
             raise ValueError
         elites = sorted(population)[:size]
-        if not all(sol.is_valid() and sol.is_updated() for sol in elites):
-            raise ValueError("Elites are broken")
         return elites
 
     @staticmethod
@@ -223,7 +224,7 @@ class GA:
     def _is_solution_inside_bounds(self, sol, bounds=None) -> bool:
         if bounds is None:
             bounds = self._bounds
-        return np.all((bounds[:, 0] < sol.x) & (sol.x < bounds[:, 1]))
+        return is_values_inside_bounds(sol.x, bounds)
 
     def filter_population(self, population) -> list:
 

@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
-from ...algorythm.solution import Solution
-from ...algorythm.ga import GA
+from pypoptim.algorythm.solution import Solution
 
 
 @pytest.fixture()
@@ -24,11 +23,3 @@ def maxabs_solution():
         def is_valid(self):
             return self.is_updated()
     return MaxAbsSolution
-
-
-@pytest.fixture()
-def population():
-    def _population(n, bounds, **kw):
-        ga_optim = GA(SolutionSubclass=square_solution, bounds=bounds, **kw)
-        return ga_optim.generate_population(n)
-    return _population
