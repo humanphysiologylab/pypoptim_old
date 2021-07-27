@@ -21,9 +21,7 @@ class GA:
                  mutation_rate=1., crossover_rate=1., selection_force=2,
                  keys_data_transmit=None, rng=None):
 
-        if issubclass(SolutionSubclass, Solution):
-            if isinstance(SolutionSubclass, Solution):
-                raise TypeError("Create subclass of the `Solution`")
+        if issubclass(SolutionSubclass, Solution) and not isinstance(SolutionSubclass, Solution):
             self._SolutionSubclass = SolutionSubclass
         else:
             raise TypeError
@@ -52,6 +50,8 @@ class GA:
         else:
             mask_log10_scale = np.asarray(mask_log10_scale)
             if len(mask_log10_scale) != self._n_genes:
+                raise ValueError
+            if np.any(self._bounds[mask_log10_scale.astype(bool), 0] <= 0):
                 raise ValueError
             self._mask_log10_scale = mask_log10_scale
 
@@ -188,7 +188,7 @@ class GA:
                 parent_data_transmitter = min(parent1_transformed, parent2_transformed)
                 for genes in offspring_genes:
                     child = self._SolutionSubclass(genes)
-                    self._transmit_solution_data(parent_data_transmitter, child)  # child['state'] = parent1['state']
+                    self._transmit_solution_data(parent_data_transmitter, child)
                     new_population.append(child)
             else:  # no crossover
                 child1 = copy.deepcopy(parent1_transformed)

@@ -1,11 +1,72 @@
 import pytest
 import numpy as np
 
+from ....algorythm.ga import GA
+from ....algorythm.solution import Solution
+
 
 class TestGA:
 
-    def test_init(self, square_solution):
-        assert 0
+    def test_init_invalid(self):
+
+        class SquareSolution(Solution):
+            def update(self):
+                self._y = np.sum(self.x ** 2)
+            def is_valid(self):
+                return self.is_updated()
+
+        invalids = Solution, 'smth'
+        for invalid in invalids:
+            with pytest.raises(TypeError):
+                GA(SolutionSubclass=invalid, bounds=...)
+
+        bounds_invalid = [], [[], []], [0, 1], [[0, 1, 2], [0, 1, 2], [0, 1, 2]], [[1, 0], [0, 1]]
+        for bounds in bounds_invalid:
+            with pytest.raises(ValueError):
+                GA(SolutionSubclass=SquareSolution, bounds=bounds)
+
+        bounds = [[-3, 5],
+                  [1, 10]]
+
+        gammas_invalid = [1], [1, 1, 1], [-1, 1]
+        for gammas in gammas_invalid:
+            with pytest.raises(ValueError):
+                GA(SolutionSubclass=SquareSolution, bounds=bounds,
+                   gammas=gammas)
+
+        mask_log10_scale_invalids = [1], [0, 1, 0], [1, 0], [1, 1]
+        for mask_log10_scale in mask_log10_scale_invalids:
+            with pytest.raises(ValueError):
+                GA(SolutionSubclass=SquareSolution, bounds=bounds,
+                   mask_log10_scale=mask_log10_scale)
+
+        invalids = -1, 1.1
+        for invalid in invalids:
+            with pytest.raises(ValueError):
+                GA(SolutionSubclass=SquareSolution, bounds=bounds,
+                   mutation_rate=invalid)
+            with pytest.raises(ValueError):
+                GA(SolutionSubclass=SquareSolution, bounds=bounds,
+                   crossover_rate=invalid)
+
+        with pytest.raises(TypeError):
+            GA(SolutionSubclass=SquareSolution, bounds=bounds,
+               selection_force=2.0)
+        with pytest.raises(ValueError):
+            GA(SolutionSubclass=SquareSolution, bounds=bounds,
+               selection_force=1)
+
+        invalids = 'abs', np.array(['foo', 'bar'])
+        for invalid in invalids:
+            with pytest.raises(TypeError):
+                GA(SolutionSubclass=SquareSolution, bounds=bounds,
+                   keys_data_transmit=invalid)
+
+        invalids = 'rng', 42
+        for invalid in invalids:
+            with pytest.raises(TypeError):
+                GA(SolutionSubclass=SquareSolution, bounds=bounds,
+                   rng=invalid)
 
     def test_is_inside_bounds(self, ga_optim_default):
         ga_optim = ga_optim_default
@@ -112,6 +173,13 @@ class TestGA:
         population_sorted = sorted(population)
         assert min(mutants) == population_sorted[0] and min(mutants)['state'] == '0'
         assert max(mutants) == population_sorted[1] and max(mutants)['state'] == '1'
+
+        ga_optim_with_data._crossover_rate = 1
+        mutants = ga_optim_with_data.get_mutants(population, 2)
+        ga_optim_with_data.update_population(population)
+        for sol in mutants:
+            assert sol['state'] == '0'
+
 
     def test_get_elites(self, ga_optim_default):
 
