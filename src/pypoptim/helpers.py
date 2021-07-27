@@ -38,6 +38,8 @@ def batches_from_list(l, n_batches=1):
 def random_value_from_bounds(bounds, log_scale=False, rng=None):
     if len(bounds) != 2 or bounds[0] >= bounds[1]:
         raise ValueError
+    if log_scale and (bounds[0] <= 0):
+        raise ValueError
     if rng is None:
         rng = np.random.default_rng()
     r = rng.random()

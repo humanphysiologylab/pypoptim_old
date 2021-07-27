@@ -19,15 +19,17 @@ def test_uniform_vector():
 
 def test_random_value_from_bounds():
     bounds_invalid = [[0, 0],
-                      [0, -1]]
-    for bounds in bounds_invalid:
+                      [3, 1],
+                      [-2, -1]]
+    log_scale = [None, None, True]
+    for bounds, log in zip(bounds_invalid, log_scale):
         with pytest.raises(ValueError):
-            random_value_from_bounds(bounds=bounds)
+            random_value_from_bounds(bounds=bounds, log_scale=log)
 
-    correct_bounds = [1, 2]
+    bounds_correct = [1, 2]
     for log_scale in True, False:
-        value = random_value_from_bounds(bounds=correct_bounds, log_scale=log_scale)
-        assert correct_bounds[0] <= value <= correct_bounds[1]
+        value = random_value_from_bounds(bounds=bounds_correct, log_scale=log_scale)
+        assert bounds_correct[0] <= value <= bounds_correct[1]
 
 
 def test_transform_genes():
