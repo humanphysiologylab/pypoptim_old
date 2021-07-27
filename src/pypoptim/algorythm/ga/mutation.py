@@ -93,4 +93,5 @@ def reflection(ub, lb, genes, shifts):
     b = ub - genes
     shifts = np.remainder(shifts, 2 * ptp)
     shifts = np.abs(np.abs(shifts - b) - ptp) - (ptp - b)
-    return shifts
+    genes = genes + shifts
+    return genes

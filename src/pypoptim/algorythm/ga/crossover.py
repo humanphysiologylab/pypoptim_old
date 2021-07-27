@@ -85,8 +85,10 @@ def sbx_crossover(parent1, parent2, bounds, cross_rate=0.9, rng=None):
                     alpha = 2.0 - np.power(beta, -(eta_c + 1.0))
                     if rand <= (1.0 / alpha):
                         betaq = np.power((rand * alpha), (1.0 / (eta_c + 1.0)))
+
                     else:
                         betaq = np.power((1.0 / (2.0 - rand * alpha)), (1.0 / (eta_c + 1.0)))
+
                     c1 = 0.5 * ((y1 + y2) - betaq * (y2 - y1))
                     beta = 1.0 + (2.0 * (yu - y2) / (y2 - y1))
                     alpha = 2.0 - np.power(beta, -(eta_c + 1.0))
