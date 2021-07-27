@@ -10,15 +10,17 @@ def cauchy_inverse_cdf(gamma, rng):
     return gamma * np.tan(np.pi * (rng.random() - 0.5))
 
 
-def cauchy_mutation(genes, gamma=1, bounds=None):  # do not change gamma=1
+def cauchy_mutation(genes, gamma=1, bounds=None, rng=None):  # do not change gamma=1
 
     if bounds is None:
         bounds = [[None, None]] * len(genes)
     assert (len(genes) == len(bounds))
 
     genes_new = []
-    shift = cauchy_inverse_cdf(gamma)
-    shift_vec = shift * uniform_vector(len(genes))  # vector mutation
+    # if rng is None:
+    #     rng = np.random.default_rng()
+    shift = cauchy_inverse_cdf(gamma, rng)
+    shift_vec = shift * uniform_vector(len(genes), rng=rng)  # vector mutation
 
     for gene, (lb, ub), shift in zip(genes, bounds, shift_vec):
         if lb is not None:  # bounce, TODO: rewrite for general case
