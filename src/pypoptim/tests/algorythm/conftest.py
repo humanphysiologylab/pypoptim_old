@@ -12,9 +12,22 @@ class SquareSolution(Solution):
         return self.is_updated()
 
 
+class MaxAbsSolution(Solution):
+    def update(self):
+        self._y = np.max(np.abs(self.x))
+
+    def is_valid(self):
+        return self.is_updated()
+
+
 @pytest.fixture()
 def square_solution():
     return SquareSolution
+
+
+@pytest.fixture()
+def maxabs_solution():
+    return MaxAbsSolution
 
 
 @pytest.fixture()
