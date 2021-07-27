@@ -1,19 +1,7 @@
 import pytest
 import numpy as np
+import itertools
 from ...algorythm.solution import Solution
-
-
-@pytest.fixture()
-def square_solution():
-
-    class SquareSolution(Solution):
-        def update(self):
-            self._y = np.sum(self.x ** 2)
-
-        def is_valid(self):
-            return self.is_updated()
-
-    return SquareSolution
 
 
 class TestSolution:
@@ -59,6 +47,7 @@ class TestSolution:
 
         x = [1, 2]
         sol = square_solution(x)
+        assert len(sol) == len(x)
         assert not sol.is_updated()
         assert not sol.is_valid()
 
@@ -70,3 +59,32 @@ class TestSolution:
         sol.x = x
         assert not sol.is_updated()
         assert not sol.is_valid()
+
+    def test_comparators(self, maxabs_solution):
+
+        def zip_product(xs, sols):
+            return zip(itertools.product(xs, xs),
+                       itertools.product(sols, sols))
+
+        xs = [1, 2, 2, 3]
+        sols = [maxabs_solution([x]) for x in xs]
+
+        for _, sol_pair in zip_product(xs, sols):
+            sol_1, sol_2 = sol_pair
+            with pytest.raises(ValueError):
+                sol_1 == sol_2
+            with pytest.raises(ValueError):
+                sol_1 > sol_2
+
+        for sol in sols:
+            sol.update()
+
+        for x_pair, sol_pair in zip_product(xs, sols):
+            x_1, x_2 = x_pair
+            sol_1, sol_2 = sol_pair
+            assert (x_1 == x_2) == (sol_1 == sol_2)
+            assert (x_1 != x_2) == (sol_1 != sol_2)
+            assert (x_1 > x_2) == (sol_1 > sol_2)
+            assert (x_1 < x_2) == (sol_1 < sol_2)
+            assert (x_1 >= x_2) == (sol_1 >= sol_2)
+            assert (x_1 <= x_2) == (sol_1 <= sol_2)
