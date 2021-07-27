@@ -2,7 +2,6 @@ import copy
 from typing import final
 
 import numpy as np
-import pandas as pd
 
 
 class Solution:
@@ -28,7 +27,6 @@ class Solution:
     def __str__(self):
         return self.__repr__()
 
-
     def __eq__(self, other):
         if not (self.is_updated() and other.is_updated()):
             raise ValueError("Can't compare invalid Solutions")
@@ -51,7 +49,6 @@ class Solution:
     def __lt__(self, other):
         return not self.__ge__(other)
 
-
     def __contains__(self, item):
         return item in self.data
 
@@ -67,7 +64,6 @@ class Solution:
     def __len__(self):
         return len(self._x)
 
-
     #x
     @property
     def x(self):
@@ -75,6 +71,9 @@ class Solution:
 
     @x.setter
     def x(self, x_new):
+        x_new = np.asfarray(x_new)
+        if x_new.ndim != 1 or x_new.shape[0] == 0:
+            raise ValueError
         self._x = x_new
         self._y = None
 
@@ -93,7 +92,6 @@ class Solution:
         if not isinstance(data, dict):
             raise ValueError
         self._data = data
-
 
     def update(self, *args, **kwargs) -> None:
         raise NotImplementedError("You must implement this method on your side!")

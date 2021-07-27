@@ -13,15 +13,19 @@ from ..solution import Solution
 import logging
 logger = logging.getLogger(__name__)
 
+
 class GA:
 
     def __init__(self, SolutionSubclass, bounds, gammas=None, mask_log10_scale=None,
                  mutation_rate=1., crossover_rate=1., selection_force=2,
                  keys_data_transmit=None, rng=None):
 
-        if not issubclass(SolutionSubclass, Solution):
+        if issubclass(SolutionSubclass, Solution):
+            if isinstance(SolutionSubclass, Solution):
+                raise TypeError("Create subclass of the `Solution`")
+            self._SolutionSubclass = SolutionSubclass
+        else:
             raise TypeError
-        self._SolutionSubclass = SolutionSubclass
 
         bounds = np.asfarray(bounds)
         if bounds.ndim != 2 or bounds.shape[0] == 0 or bounds.shape[1] != 2:
@@ -83,6 +87,10 @@ class GA:
         else:
             self._rng = np.random.default_rng()
 
+    @property
+    def bounds(self):
+        return self._bounds.copy()
+
     def __repr__(self):
 
         hstack = np.hstack([self._bounds,
@@ -100,7 +108,6 @@ class GA:
     def __str__(self):
         return self.__repr__()
 
-
     def _transform_genes(self, genes):
         genes_transformed, bounds_transformed = transform_genes_bounds(genes,
                                                                        self._bounds,
@@ -115,7 +122,6 @@ class GA:
                                             self._bounds,
                                             self._mask_log10_scale)
         return genes
-
 
     def _transform_solution(self, sol):
         sol_transformed = self._SolutionSubclass(self._transform_genes(sol.x), **sol.data)
@@ -192,7 +198,6 @@ class GA:
                                    bounds=self._bounds_transformed,
                                    gamma=self.__gamma_default,
                                    mutation_rate=self._mutation_rate,
-                                   inplace=True,
                                    rng=self._rng)
 
         new_population = [self._transform_solution_back(sol) for sol in new_population]
@@ -205,7 +210,10 @@ class GA:
             raise TypeError
         if not (0 <= size <= len(population)):
             raise ValueError
-        return sorted(population)[:size]
+        elites = sorted(population)[:size]
+        if not all(sol.is_valid() and sol.is_updated() for sol in elites):
+            raise ValueError("Elites are broken")
+        return elites
 
     @staticmethod
     def update_population(population) -> None:
@@ -239,7 +247,6 @@ class GA:
         logger.info('filter_population: END')
 
         return population_filtered
-
 
     def run(self, n_solutions, n_epochs=1, n_elites=0):
 
