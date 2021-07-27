@@ -23,8 +23,7 @@ class GA:
             raise TypeError
         self._SolutionSubclass = SolutionSubclass
 
-        if not isinstance(bounds, np.ndarray):
-            raise TypeError
+        bounds = np.asfarray(bounds)
         if bounds.ndim != 2 or bounds.shape[0] == 0 or bounds.shape[1] != 2:
             raise ValueError
         if np.any(bounds[:, 0] >= bounds[:, 1]):
@@ -36,8 +35,7 @@ class GA:
         if gammas is None:
             self._gammas = np.full(self._n_genes, self.__gamma_default)
         else:
-            if not isinstance(gammas, np.ndarray):
-                raise TypeError
+            gammas = np.asfarray(gammas)
             if len(gammas) != self._n_genes:
                 raise ValueError
             if np.any(gammas <= 0):
@@ -47,8 +45,7 @@ class GA:
         if mask_log10_scale is None:
             self._mask_log10_scale = np.full(self._n_genes, False)
         else:
-            if not isinstance(mask_log10_scale, np.ndarray):
-                raise TypeError
+            mask_log10_scale = np.asarray(mask_log10_scale)
             if len(mask_log10_scale) != self._n_genes:
                 raise ValueError
             self._mask_log10_scale = mask_log10_scale
