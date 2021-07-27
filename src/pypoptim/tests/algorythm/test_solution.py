@@ -3,19 +3,6 @@ import numpy as np
 from ...algorythm.solution import Solution
 
 
-@pytest.fixture()
-def square_solution():
-
-    class SquareSolution(Solution):
-        def update(self):
-            self._y = np.sum(self.x ** 2)
-
-        def is_valid(self):
-            return self.is_updated()
-
-    return SquareSolution
-
-
 class TestSolution:
 
     def test_init(self):
