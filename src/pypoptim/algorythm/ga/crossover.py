@@ -52,7 +52,13 @@ def sbx_crossover(parent1, parent2, bounds, cross_rate=0.9, rng=None):
     if rng is None:
         rng = np.random.default_rng()
 
-    random_sequence = rng.random(1 + 3 * len(parent1))
+    random_sequence_length = 1 + 3 * len(parent1)
+    random_sequence = rng.random(random_sequence_length)
+    # U may use smth like:
+    # ```
+    #   random_sequence = np.zeros(random_sequence_length)
+    # ```
+    # to make all if conditions containing rand to be True
 
     return _sbx_crossover(parent1=np.asfarray(parent1),
                           parent2=np.asfarray(parent2),
