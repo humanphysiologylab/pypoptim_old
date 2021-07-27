@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 
 from ..helpers import uniform_vector
@@ -17,7 +18,16 @@ def test_uniform_vector():
 
 
 def test_random_value_from_bounds():
-    assert 0
+    bounds_invalid = [[0, 0],
+                      [0, -1]]
+    for bounds in bounds_invalid:
+        with pytest.raises(ValueError):
+            random_value_from_bounds(bounds=bounds)
+
+    correct_bounds = [1, 2]
+    for log_scale in True, False:
+        value = random_value_from_bounds(bounds=correct_bounds, log_scale=log_scale)
+        assert correct_bounds[0] <= value <= correct_bounds[1]
 
 
 def test_transform_genes():
