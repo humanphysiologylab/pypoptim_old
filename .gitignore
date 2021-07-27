@@ -105,7 +105,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
-env/
+env*/
 venv/
 ENV/
 env.bak/
@@ -147,5 +147,5 @@ mpi_scripts/slurm/slurm-*.out
 publication
 /mpi_scripts/slurm/
 
-notebooks
+*notebooks
 mpi_scripts/*/*.ipynb

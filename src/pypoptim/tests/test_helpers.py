@@ -2,6 +2,10 @@ import numpy as np
 
 from ..helpers import uniform_vector
 from ..helpers import transform_genes_bounds, transform_genes_bounds_back
+from ..helpers import strip_comments
+from ..helpers import random_value_from_bounds
+from ..helpers import autoscaling
+
 
 def test_uniform_vector():
 
@@ -10,6 +14,10 @@ def test_uniform_vector():
 
     assert len(uv) == n
     assert np.isclose(np.linalg.norm(uv), 1)
+
+
+def test_random_value_from_bounds():
+    assert 0
 
 
 def test_transform_genes():
@@ -35,3 +43,11 @@ def test_transform_genes():
     genes_back = transform_genes_bounds_back(genes_transformed, bounds_transformed, bounds, mask_multipliers)
 
     assert np.allclose(genes, genes_back)
+
+
+def test_strip_comments():
+    assert 0
+
+
+def test_autoscaling():
+    assert 0

@@ -27,10 +27,6 @@ def find_index_first(seq, condition):
     return next((i for i, x in enumerate(seq) if condition(x)), None)
 
 
-def get_value_by_key(array, legend, key):
-    return dict(zip(legend['name'], array))[key]
-
-
 def flatten_iterable(x):
     return list(itertools.chain(*x))
 
