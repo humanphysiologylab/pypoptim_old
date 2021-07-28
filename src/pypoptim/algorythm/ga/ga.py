@@ -14,7 +14,6 @@ from ..solution import Solution
 import logging
 logger = logging.getLogger(__name__)
 
-
 class GA:
 
     def __init__(self, SolutionSubclass, bounds, gammas=None, mask_log10_scale=None,
@@ -219,7 +218,7 @@ class GA:
         for sol in population:
             sol.update()
 
-    def _is_solution_inside_bounds(self, sol, bounds=None) -> bool:
+    def is_solution_inside_bounds(self, sol, bounds=None) -> bool:
         if bounds is None:
             bounds = self._bounds
         return is_values_inside_bounds(sol.x, bounds)
@@ -236,7 +235,7 @@ class GA:
             if not sol.is_valid():
                 logger.info(f'  {i} not valid')
                 continue
-            if not self._is_solution_inside_bounds(sol):
+            if not self.is_solution_inside_bounds(sol):
                 logger.info(f'  {i} outside bounds')
                 continue
 

@@ -74,12 +74,12 @@ class TestGA:
 
         sol = ga_optim_default.generate_solution()
         sol.x = [0, 3]
-        assert ga_optim._is_solution_inside_bounds(sol, bounds)
-        assert ga_optim._is_solution_inside_bounds(sol)
+        assert ga_optim.is_solution_inside_bounds(sol, bounds)
+        assert ga_optim.is_solution_inside_bounds(sol)
 
         sol.x = [0, 0]
-        assert not ga_optim._is_solution_inside_bounds(sol, bounds)
-        assert not ga_optim._is_solution_inside_bounds(sol)
+        assert not ga_optim.is_solution_inside_bounds(sol, bounds)
+        assert not ga_optim.is_solution_inside_bounds(sol)
 
     def test_generate_solution(self, ga_optim_fabric):
 
@@ -96,13 +96,13 @@ class TestGA:
         assert not sol_1.is_valid()
 
         for sol in sol_1, sol_2, sol_2_another:
-            assert ga_optim_1._is_solution_inside_bounds(sol)
+            assert ga_optim_1.is_solution_inside_bounds(sol)
 
     def test_generate_population(self, ga_optim_default):
         n = 42
         population = ga_optim_default.generate_population(n)
         assert len(population) == n
-        assert all(ga_optim_default._is_solution_inside_bounds(sol) for sol in population)
+        assert all(ga_optim_default.is_solution_inside_bounds(sol) for sol in population)
 
     def test_update_population(self, ga_optim_default):
         n = 42
@@ -125,7 +125,7 @@ class TestGA:
         for sol in population:
             sol.x = bounds[:, 1] - margin
             sol.update()
-            assert ga_optim_for_is_valid._is_solution_inside_bounds(sol)
+            assert ga_optim_for_is_valid.is_solution_inside_bounds(sol)
 
         population_filtered = ga_optim_for_is_valid.filter_population(population)
         assert len(population) == len(population_filtered)
@@ -136,7 +136,7 @@ class TestGA:
         population[1]._x = np.full_like(len(bounds), -0.1)  # makes this solution invalid, yet updated
         assert not population[1].is_valid() and population[1].is_updated()
         population[2]._x = bounds[:, 1] + 1  # makes this solution outside bounds, yet updated and valid
-        assert not ga_optim_for_is_valid._is_solution_inside_bounds(population[2])\
+        assert not ga_optim_for_is_valid.is_solution_inside_bounds(population[2])\
                and population[2].is_updated() and population[2].is_valid()
 
         population_filtered = ga_optim_for_is_valid.filter_population(population)
