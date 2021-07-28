@@ -34,7 +34,7 @@ class TestGA:
                 GA(SolutionSubclass=SquareSolution, bounds=bounds,
                    gammas=gammas)
 
-        mask_log10_scale_invalids = [1], [0, 1, 0], [1, 0], [1, 1]
+        mask_log10_scale_invalids = [False], [False, False, False], [True, False], [True, True]
         for mask_log10_scale in mask_log10_scale_invalids:
             with pytest.raises(ValueError):
                 GA(SolutionSubclass=SquareSolution, bounds=bounds,
@@ -143,9 +143,6 @@ class TestGA:
         assert len(population) == len(population_filtered) + 3
         assert population[3:] == population_filtered
 
-    def test_transmit_solution_data(self):
-        assert 0
-
     def test_get_mutants(self, ga_optim_with_data):
 
         for n in range(2):
@@ -206,5 +203,34 @@ class TestGA:
         assert elites[0] <= elites[1]
 
 
-    def test_run(self):
-        assert 0
+    def test_transmit_solution_data(self, ga_optim_with_data):
+        parent = ga_optim_with_data.generate_solution()
+        child = ga_optim_with_data.generate_solution()
+
+        parent['state'] = 'parent_state'  # will be transmitted
+        parent['spam'] = 'parent_spam'
+
+        child['spam'] = 'child_spam'
+        child['foo'] = 'child_foo'
+
+        ga_optim_with_data._transmit_solution_data(sol_parent=parent,
+                                                   sol_child=child)
+
+        assert child['state'] == 'parent_state'
+        assert child['spam'] == 'child_spam'
+        assert child['foo'] == 'child_foo'
+
+        ga_optim_with_data._keys_data_transmit = ['state', 'spam']
+        parent['state'] = 'parent_state_another'
+        parent['spam'] = ['s', 'p', 'a', 'm']
+        parent['foo'] = 42
+
+        ga_optim_with_data._transmit_solution_data(sol_parent=parent,
+                                                   sol_child=child)
+
+        assert child['state'] == 'parent_state_another'
+        assert child['spam'] == parent['spam']
+        assert child['foo'] != parent['foo']
+
+        parent['spam'].append('X')
+        assert child['spam'] != parent['spam']  # child had copy of the `spam`

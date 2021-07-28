@@ -148,9 +148,7 @@ class GA:
 
     def _transmit_solution_data(self, sol_parent: Solution, sol_child: Solution):
         for key in self._keys_data_transmit:
-            if key not in sol_parent:
-                raise KeyError
-            sol_child[key] = sol_parent[key]
+            sol_child[key] = copy.deepcopy(sol_parent[key])
 
     def _selection(self, population) -> Solution:  # tournament selection
         return tournament_selection(np.array(population, dtype=object),
