@@ -1,6 +1,6 @@
 import pytest
 
-from ....algorythm.ga.mutation import cauchy_inverse_cdf, cauchy_mutation, cauchy_mutation_population, reflection
+from ....algorythm.ga.mutation import cauchy_inverse_cdf, cauchy_mutation, cauchy_mutation_population
 from ....helpers import is_values_inside_bounds
 import numpy as np
 

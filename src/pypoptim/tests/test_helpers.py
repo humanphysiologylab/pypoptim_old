@@ -5,8 +5,8 @@ from ..helpers import uniform_vector
 from ..helpers import transform_genes_bounds, transform_genes_bounds_back
 from ..helpers import strip_comments
 from ..helpers import random_value_from_bounds
-from ..helpers import autoscaling
-from ..helpers import reflection
+from ..helpers import calculate_autoscaling
+from ..helpers import calculate_reflection
 
 
 def test_uniform_vector():
@@ -65,7 +65,7 @@ def test_reflection():
 
     for shifts, genes_expected in zip([0.25, 1.3, -5.3],
                                       [0.75, 0.2, 0.8]):
-        genes_after = reflection(ub=ub, lb=lb, values=values, shifts=shifts)
+        genes_after = calculate_reflection(ub=ub, lb=lb, values=values, shifts=shifts)
         assert np.allclose(genes_after, genes_expected)
 
 

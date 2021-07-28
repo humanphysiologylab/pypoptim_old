@@ -140,7 +140,7 @@ def strip_comments(code, comment_char='#'):
     return code
 
 
-def autoscaling(signal_to_scale, signal_reference):
+def calculate_autoscaling(signal_to_scale, signal_reference):
 
     def scalar_multiplications(a, b):
         if len(a) != len(b):
@@ -166,7 +166,7 @@ def autoscaling(signal_to_scale, signal_reference):
     return signal_scaled, (alpha, beta)
 
 
-def reflection(ub, lb, values, shifts):
+def calculate_reflection(ub, lb, values, shifts):
     bounds = np.vstack([lb, ub]).T
     if not is_values_inside_bounds(values, bounds):
         raise ValueError

@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 
-from ...helpers import uniform_vector, reflection, is_values_inside_bounds
+from ...helpers import uniform_vector, calculate_reflection, is_values_inside_bounds
 
 
 def cauchy_inverse_cdf(gamma, rng):
@@ -27,7 +27,7 @@ def cauchy_mutation(genes, gamma=1, bounds=None, rng=None):  # do not change gam
 
     for gene, (lb, ub), shift in zip(genes, bounds, shift_vec):
         if lb is not None:
-            gene_new = reflection(ub, lb, gene, shift)
+            gene_new = calculate_reflection(ub, lb, gene, shift)
         else:
             gene_new = gene + shift
         genes_new.append(gene_new)
@@ -67,7 +67,7 @@ def cauchy_mutation_population(population, bounds, gamma, mutation_rate, rng=Non
         if not is_values_inside_bounds(genes, bounds):
             raise ValueError
 
-        genes = reflection(ub, lb, genes, shifts)
+        genes = calculate_reflection(ub, lb, genes, shifts)
         genes = np.reshape(genes, (len(population), n_genes))
 
     else:
