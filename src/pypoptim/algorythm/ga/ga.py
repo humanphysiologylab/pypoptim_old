@@ -225,24 +225,24 @@ class GA:
 
     def filter_population(self, population) -> list:
 
-        logger.info('filter_population: START')
+        logger.debug('filter_population: START')
 
         population_filtered = []
         for i, sol in enumerate(population):
             if not sol.is_updated():
-                logger.info(f'  {i}: not updated')
+                logger.debug(f'  {i}: not updated')
                 continue
             if not sol.is_valid():
-                logger.info(f'  {i} not valid')
+                logger.debug(f'  {i} not valid')
                 continue
             if not self.is_solution_inside_bounds(sol):
-                logger.info(f'  {i} outside bounds')
+                logger.debug(f'  {i} outside bounds')
                 continue
 
-            logger.info(f'  {i} kept')
+            logger.debug(f'  {i} kept')
             population_filtered.append(sol)
 
-        logger.info('filter_population: END')
+        logger.debug('filter_population: END')
 
         return population_filtered
 
