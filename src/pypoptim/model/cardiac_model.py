@@ -32,11 +32,9 @@ class CardiacModel:
 
         self._status = None
 
-
     @property
     def status(self):
         return self._status
-
 
     def run(self, S, C, **kwargs):
 

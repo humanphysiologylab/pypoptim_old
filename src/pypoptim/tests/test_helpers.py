@@ -7,6 +7,7 @@ from ..helpers import strip_comments
 from ..helpers import random_value_from_bounds
 from ..helpers import calculate_autoscaling
 from ..helpers import calculate_reflection
+from ..helpers import argmin, argmax
 
 
 def test_uniform_vector():
@@ -58,15 +59,14 @@ def test_transform_genes():
     assert np.allclose(genes, genes_back)
 
 
-def test_reflection():
-    ub = np.array([1])
-    lb = np.array([0])
-    values = np.array([0.5])
-
-    for shifts, genes_expected in zip([0.25, 1.3, -5.3],
-                                      [0.75, 0.2, 0.8]):
-        genes_after = calculate_reflection(ub=ub, lb=lb, values=values, shifts=shifts)
-        assert np.allclose(genes_after, genes_expected)
+@pytest.mark.parametrize(
+    "shifts,genes_expected,ub,lb,values", [(0.25, 0.75, 1, 0, 0.5),
+                                           (1.3, 0.2, 1, 0, 0.5),
+                                           (-5.3, 0.8, 1, 0, 0.5)]  # TODO: add multidimensional test cases
+)
+def test_reflection(shifts, genes_expected, ub, lb, values):
+    genes_after = calculate_reflection(ub=ub, lb=lb, values=values, shifts=shifts)
+    assert np.allclose(genes_after, genes_expected)
 
 
 def test_strip_comments():
@@ -75,3 +75,23 @@ def test_strip_comments():
 
 def test_autoscaling():
     assert 0
+
+
+@pytest.mark.parametrize(
+    "test_input,expected_output", [([0], 0),
+                                   ([0, 1], 0),
+                                   ([1, 0], 1),
+                                   ([0, 1, 0], 0)]
+)
+def test_argmin(test_input, expected_output):
+    assert argmin(test_input) == expected_output
+
+
+@pytest.mark.parametrize(
+    "test_input,expected_output", [([0], 0),
+                                   ([0, 1], 1),
+                                   ([1, 0], 0),
+                                   ([1, 0, 1], 0)]
+)
+def test_argmax(test_input, expected_output):
+    assert argmax(test_input) == expected_output
