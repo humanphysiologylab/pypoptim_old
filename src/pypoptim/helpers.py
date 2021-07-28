@@ -27,10 +27,6 @@ def find_index_first(seq, condition):
     return next((i for i, x in enumerate(seq) if condition(x)), None)
 
 
-def get_value_by_key(array, legend, key):
-    return dict(zip(legend['name'], array))[key]
-
-
 def flatten_iterable(x):
     return list(itertools.chain(*x))
 
@@ -39,8 +35,15 @@ def batches_from_list(l, n_batches=1):
     return [l[i::n_batches] for i in range(n_batches)]
 
 
+def is_values_inside_bounds(values, bounds):
+    values, bounds = map(np.asfarray, [values, bounds])
+    return np.all((bounds[:, 0] < values) & (values < bounds[:, 1]))
+
+
 def random_value_from_bounds(bounds, log_scale=False, rng=None):
     if len(bounds) != 2 or bounds[0] >= bounds[1]:
+        raise ValueError
+    if log_scale and (bounds[0] <= 0):
         raise ValueError
     if rng is None:
         rng = np.random.default_rng()
@@ -137,7 +140,7 @@ def strip_comments(code, comment_char='#'):
     return code
 
 
-def autoscaling(signal_to_scale, signal_reference):
+def calculate_autoscaling(signal_to_scale, signal_reference):
 
     def scalar_multiplications(a, b):
         if len(a) != len(b):
@@ -161,3 +164,16 @@ def autoscaling(signal_to_scale, signal_reference):
     signal_scaled = signal_to_scale * alpha + beta
 
     return signal_scaled, (alpha, beta)
+
+
+def calculate_reflection(ub, lb, values, shifts):
+    bounds = np.vstack([lb, ub]).T
+    if not is_values_inside_bounds(values, bounds):
+        raise ValueError
+    ptp = ub - lb
+    b = ub - values
+    shifts = np.remainder(shifts, 2 * ptp)
+    shifts = np.abs(np.abs(shifts - b) - ptp) - (ptp - b)
+    result = values + shifts
+    return result
+

@@ -4,7 +4,8 @@ import numpy as np
 
 from pypoptim.helpers import random_value_from_bounds,\
                              transform_genes_bounds,\
-                             transform_genes_bounds_back
+                             transform_genes_bounds_back, \
+                             is_values_inside_bounds
 from .selection import tournament_selection
 from .crossover import sbx_crossover
 from .mutation import cauchy_mutation_population
@@ -13,18 +14,19 @@ from ..solution import Solution
 import logging
 logger = logging.getLogger(__name__)
 
+
 class GA:
 
     def __init__(self, SolutionSubclass, bounds, gammas=None, mask_log10_scale=None,
                  mutation_rate=1., crossover_rate=1., selection_force=2,
                  keys_data_transmit=None, rng=None):
 
-        if not issubclass(SolutionSubclass, Solution):
+        if issubclass(SolutionSubclass, Solution) and not isinstance(SolutionSubclass, Solution):
+            self._SolutionSubclass = SolutionSubclass
+        else:
             raise TypeError
-        self._SolutionSubclass = SolutionSubclass
 
-        if not isinstance(bounds, np.ndarray):
-            raise TypeError
+        bounds = np.asfarray(bounds)
         if bounds.ndim != 2 or bounds.shape[0] == 0 or bounds.shape[1] != 2:
             raise ValueError
         if np.any(bounds[:, 0] >= bounds[:, 1]):
@@ -36,8 +38,7 @@ class GA:
         if gammas is None:
             self._gammas = np.full(self._n_genes, self.__gamma_default)
         else:
-            if not isinstance(gammas, np.ndarray):
-                raise TypeError
+            gammas = np.asfarray(gammas)
             if len(gammas) != self._n_genes:
                 raise ValueError
             if np.any(gammas <= 0):
@@ -47,9 +48,10 @@ class GA:
         if mask_log10_scale is None:
             self._mask_log10_scale = np.full(self._n_genes, False)
         else:
-            if not isinstance(mask_log10_scale, np.ndarray):
-                raise TypeError
+            mask_log10_scale = np.asarray(mask_log10_scale)
             if len(mask_log10_scale) != self._n_genes:
+                raise ValueError
+            if np.any(self._bounds[mask_log10_scale.astype(bool), 0] <= 0):
                 raise ValueError
             self._mask_log10_scale = mask_log10_scale
 
@@ -86,6 +88,10 @@ class GA:
         else:
             self._rng = np.random.default_rng()
 
+    @property
+    def bounds(self):
+        return self._bounds.copy()
+
     def __repr__(self):
 
         hstack = np.hstack([self._bounds,
@@ -103,7 +109,6 @@ class GA:
     def __str__(self):
         return self.__repr__()
 
-
     def _transform_genes(self, genes):
         genes_transformed, bounds_transformed = transform_genes_bounds(genes,
                                                                        self._bounds,
@@ -118,7 +123,6 @@ class GA:
                                             self._bounds,
                                             self._mask_log10_scale)
         return genes
-
 
     def _transform_solution(self, sol):
         sol_transformed = self._SolutionSubclass(self._transform_genes(sol.x), **sol.data)
@@ -144,20 +148,22 @@ class GA:
 
     def _transmit_solution_data(self, sol_parent: Solution, sol_child: Solution):
         for key in self._keys_data_transmit:
-            if key not in sol_parent:
-                raise KeyError
-            sol_child[key] = sol_parent[key]
+            sol_child[key] = copy.deepcopy(sol_parent[key])
 
     def _selection(self, population) -> Solution:  # tournament selection
-        return tournament_selection(population, self._selection_force, rng=self._rng)
+        return tournament_selection(np.array(population, dtype=object),
+                                    self._selection_force, rng=self._rng)
 
     def _crossover(self, genes1, genes2) -> tuple:
-        return sbx_crossover(genes1, genes2, bounds=self._bounds_transformed, rng=self._rng)
+        return sbx_crossover(genes1, genes2,
+                             bounds=self._bounds_transformed,
+                             cross_rate=self._crossover_rate,
+                             rng=self._rng)
 
     def get_mutants(self, population, size=1):
 
-        if not len(population):
-            raise ValueError
+        if len(population) < 3:
+            raise ValueError("Insufficient number of solution for the crossover")
         if not isinstance(size, int):
             raise TypeError
         if size < 0:
@@ -180,7 +186,7 @@ class GA:
                 parent_data_transmitter = min(parent1_transformed, parent2_transformed)
                 for genes in offspring_genes:
                     child = self._SolutionSubclass(genes)
-                    self._transmit_solution_data(parent_data_transmitter, child)  # child['state'] = parent1['state']
+                    self._transmit_solution_data(parent_data_transmitter, child)
                     new_population.append(child)
             else:  # no crossover
                 child1 = copy.deepcopy(parent1_transformed)
@@ -189,13 +195,10 @@ class GA:
 
         new_population = new_population[:size]  # sbx_crossover creates pairs so this is for odd size of the population
 
-        # return new_population
-
         cauchy_mutation_population(new_population,
                                    bounds=self._bounds_transformed,
                                    gamma=self.__gamma_default,
                                    mutation_rate=self._mutation_rate,
-                                   inplace=True,
                                    rng=self._rng)
 
         new_population = [self._transform_solution_back(sol) for sol in new_population]
@@ -208,7 +211,8 @@ class GA:
             raise TypeError
         if not (0 <= size <= len(population)):
             raise ValueError
-        return sorted(population)[:size]
+        elites = sorted(population)[:size]
+        return elites
 
     @staticmethod
     def update_population(population) -> None:
@@ -218,7 +222,7 @@ class GA:
     def _is_solution_inside_bounds(self, sol, bounds=None) -> bool:
         if bounds is None:
             bounds = self._bounds
-        return np.all((bounds[:, 0] < sol.x) & (sol.x < bounds[:, 1]))
+        return is_values_inside_bounds(sol.x, bounds)
 
     def filter_population(self, population) -> list:
 
@@ -242,7 +246,6 @@ class GA:
         logger.info('filter_population: END')
 
         return population_filtered
-
 
     def run(self, n_solutions, n_epochs=1, n_elites=0):
 

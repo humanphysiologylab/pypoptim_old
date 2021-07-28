@@ -1,7 +1,7 @@
 import numpy as np
 import copy
 
-from ...helpers import uniform_vector
+from ...helpers import uniform_vector, calculate_reflection, is_values_inside_bounds
 
 
 def cauchy_inverse_cdf(gamma, rng):
@@ -10,33 +10,32 @@ def cauchy_inverse_cdf(gamma, rng):
     return gamma * np.tan(np.pi * (rng.random() - 0.5))
 
 
-def cauchy_mutation(genes, gamma=1, bounds=None):  # do not change gamma=1
+def cauchy_mutation(genes, gamma=1, bounds=None, rng=None):  # do not change gamma=1
 
     if bounds is None:
         bounds = [[None, None]] * len(genes)
+    else:
+        if not is_values_inside_bounds(genes, bounds):
+            raise ValueError
     assert (len(genes) == len(bounds))
 
     genes_new = []
-    shift = cauchy_inverse_cdf(gamma)
-    shift_vec = shift * uniform_vector(len(genes))  # vector mutation
+    if rng is None:
+        rng = np.random.default_rng()
+    shift = cauchy_inverse_cdf(gamma, rng)
+    shift_vec = shift * uniform_vector(len(genes), rng=rng)  # vector mutation
 
     for gene, (lb, ub), shift in zip(genes, bounds, shift_vec):
-        if lb is not None:  # bounce, TODO: rewrite for general case
-            assert (lb <= gene <= ub), f"Violated: {lb} <= {gene} <= {ub}"
-            b = ub - gene
-            ptp = ub - lb
-            while shift < 0:
-                shift += 2 * ptp
-            shift %= (2 * ptp)
-            shift = np.abs(np.abs(shift - b) - ptp) - (ptp - b)
-
-        gene_new = gene + shift
+        if lb is not None:
+            gene_new = calculate_reflection(ub, lb, gene, shift)
+        else:
+            gene_new = gene + shift
         genes_new.append(gene_new)
 
     return genes_new
 
 
-def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace=False, rng=None):
+def cauchy_mutation_population(population, bounds, gamma, mutation_rate, rng=None):
 
     if rng is None:
         rng = np.random.default_rng()
@@ -52,7 +51,7 @@ def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace
         p = rng.random(len(population))
         shifts = gamma * np.tan(np.pi * (p - 0.5))
 
-        mut_mask = rng.random(len(population)) <= mutation_rate
+        mut_mask = rng.random(len(population)) < mutation_rate
         shifts = shifts * mut_mask
 
         shifts = np.tile(shifts, (n_genes, 1)).T.flatten()
@@ -62,29 +61,21 @@ def cauchy_mutation_population(population, bounds, gamma, mutation_rate, inplace
         u = u.flatten()
 
         shifts = shifts * u
-        lb, ub = np.tile(bounds, (len(population), 1)).T
+        bounds = np.tile(bounds, (len(population), 1))
+        lb, ub = bounds.T
 
-        assert (np.all(lb <= genes) and np.all(genes <= ub)), "genes are outside bounds"
+        if not is_values_inside_bounds(genes, bounds):
+            raise ValueError
 
-        ptp = ub - lb
-        b = ub - genes
-
-        shifts = np.remainder(shifts, 2 * ptp)
-        shifts = np.abs(np.abs(shifts - b) - ptp) - (ptp - b)
-
-        genes = genes + shifts
+        genes = calculate_reflection(ub, lb, genes, shifts)
         genes = np.reshape(genes, (len(population), n_genes))
 
     else:
         genes = []
 
-    if inplace:
-        mutants = population
-    else:
-        mutants = copy.deepcopy(population)
+    mutants = copy.deepcopy(population)
 
     for i in range(len(mutants)):
         mutants[i].x = genes[i]
 
-    if not inplace:
-        return mutants
+    return mutants
