@@ -2,8 +2,10 @@ import numpy as np
 from sklearn.metrics import mean_squared_error as MSE
 
 
-def RMSE(x, y):
-    return MSE(x, y, squared=False)
+def RMSE(x, y, *, sample_weight=None, multioutput='uniform_average'):
+    return MSE(x, y, squared=False,
+               sample_weight=sample_weight,
+               multioutput=multioutput,)
 
 
 def calculate_RMSE(x, y) -> float:
@@ -20,4 +22,3 @@ def calculate_RMSE_balanced(x, y) -> float:
 
 def calculate_RMSE_weightened(x, y, weights) -> float:
     return float(np.sum(MSE(x, y, squared=False, multioutput='raw_values') * weights))
-
