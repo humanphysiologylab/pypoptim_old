@@ -194,11 +194,11 @@ class GA:
 
         new_population = new_population[:size]  # sbx_crossover creates pairs so this is for odd size of the population
 
-        cauchy_mutation_population(new_population,
-                                   bounds=self._bounds_transformed,
-                                   gamma=self.__gamma_default,
-                                   mutation_rate=self._mutation_rate,
-                                   rng=self._rng)
+        new_population = cauchy_mutation_population(new_population,
+                                                    bounds=self._bounds_transformed,
+                                                    gamma=self.__gamma_default,
+                                                    mutation_rate=self._mutation_rate,
+                                                    rng=self._rng)
 
         new_population = [self._transform_solution_back(sol) for sol in new_population]
 
