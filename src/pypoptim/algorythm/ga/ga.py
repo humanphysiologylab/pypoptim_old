@@ -2,21 +2,23 @@ import copy
 
 import numpy as np
 
-from pypoptim.helpers import random_value_from_bounds,\
-                             transform_genes_bounds,\
-                             transform_genes_bounds_back, \
-                             is_values_inside_bounds
+from pypoptim.helpers import random_value_from_bounds, \
+    transform_genes_bounds, \
+    transform_genes_bounds_back, \
+    is_values_inside_bounds
 from .selection import tournament_selection
 from .crossover import sbx_crossover
 from .mutation import cauchy_mutation_population
 from ..solution import Solution
 
 import logging
+
 logger = logging.getLogger(__name__)
+
 
 class GA:
 
-    def __init__(self, SolutionSubclass, bounds, gammas=None, mask_log10_scale=None,
+    def __init__(self, SolutionSubclass, bounds, gammas=None, gamma_default=1., mask_log10_scale=None,
                  mutation_rate=1., crossover_rate=1., selection_force=2,
                  keys_data_transmit=None, rng=None):
 
@@ -33,9 +35,16 @@ class GA:
         self._bounds = bounds
         self._n_genes = len(bounds)
 
-        self.__gamma_default = 1
+        if gamma_default is None:
+            self._gamma_default = 1
+        else:
+            gamma_default = float(gamma_default)
+            if gamma_default <= 0:
+                raise ValueError
+            self._gamma_default = gamma_default
+
         if gammas is None:
-            self._gammas = np.full(self._n_genes, self.__gamma_default)
+            self._gammas = np.full(self._n_genes, self._gamma_default)
         else:
             gammas = np.asfarray(gammas)
             if len(gammas) != self._n_genes:
@@ -96,7 +105,7 @@ class GA:
         hstack = np.hstack([self._bounds,
                             self._gammas.reshape(-1, 1),
                             self._mask_log10_scale.reshape(-1, 1)])
-        s =  f'{self.__class__.__name__}:\n'
+        s = f'{self.__class__.__name__}:\n'
         s += f'[bounds_lower bounds_upper gammas mask_log_10_scale]\n'
         s += str(hstack) + "\n"
         s += f'mutation_rate: {self._mutation_rate}\n'
@@ -113,7 +122,7 @@ class GA:
                                                                        self._bounds,
                                                                        self._gammas,
                                                                        self._mask_log10_scale)
-        assert(np.allclose(bounds_transformed, self._bounds_transformed))
+        assert (np.allclose(bounds_transformed, self._bounds_transformed))
         return genes_transformed
 
     def _transform_genes_back(self, genes_transformed):
@@ -196,7 +205,7 @@ class GA:
 
         new_population = cauchy_mutation_population(new_population,
                                                     bounds=self._bounds_transformed,
-                                                    gamma=self.__gamma_default,
+                                                    gamma=self._gamma_default,
                                                     mutation_rate=self._mutation_rate,
                                                     rng=self._rng)
 
