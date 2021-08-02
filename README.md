@@ -22,3 +22,10 @@ pytest --pyargs pypoptim
 ```sh
 mpirun -n 2 python mpi_scripts/path/to/some/mpi_script.py configs/path/to/some/config.json
 ```
+
+### ToDo:
+Split this repository into three or so:
+- pypoptim itself
+- models (C and Python variants)
+- mpi_scripts/
+- add tests for all
