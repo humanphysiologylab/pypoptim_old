@@ -177,3 +177,15 @@ def calculate_reflection(ub, lb, values, shifts):
     result = values + shifts
     return result
 
+
+def calculate_gammas(upper_bound_global, genes_dict):
+    assert upper_bound_global > 0
+    gammas = np.zeros(len(genes_dict))
+    for gene, k in zip(genes_dict, range(len(genes_dict))):
+        lb, ub = genes_dict[gene]['bounds']
+        print(lb, ub)
+        if genes_dict[gene]['is_multiplier']:
+            gammas[k] += np.log(ub/lb)/upper_bound_global
+        else:
+            gammas[k] += (ub-lb)/upper_bound_global
+    return gammas
