@@ -1,8 +1,13 @@
 # pypoptim
-Population-based algorithms for global optimization of the cardiac action potential models.
+>Population-based algorithms for global optimization of the cardiac action potential models.
 
 ## Getting started
+### Install
 1. Download and install [miniconda](https://docs.conda.io/en/latest/miniconda.html#linux-installers).
+(optional) Install mamba and replace further `conda` calls by `mamba` calls:
+    ```sh
+    conda install mamba -n base -c conda-forge
+    ```
 2. Create environment (in this folder) and activate it:
 ```sh
 conda env create -f environment.yml --prefix ./env
@@ -13,14 +18,20 @@ conda activate ./env
 pip install -e .
 ```
 
-4. Test:
+### Test
 ```sh
 pytest --pyargs pypoptim
 ```
 
-5. Run:
+### Usage
+See [examples](./examples) folder.
+
+### Pre-commit
 ```sh
-mpirun -n 2 python mpi_scripts/path/to/some/mpi_script.py configs/path/to/some/config.json
+pre-commit install  # only once
+git add FILES
+pre-commit run
+git commit -m "MESSAGE"
 ```
 
 ### ToDo:

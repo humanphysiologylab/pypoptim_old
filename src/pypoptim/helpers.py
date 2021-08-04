@@ -56,23 +56,23 @@ def random_value_from_bounds(bounds, log_scale=False, rng=None):
 
 def rastrigin(x, A=10):
     x = np.array(x)
-    return sum(x**2 + A * (1 - np.cos(2 * np.pi * x)))
+    return sum(x ** 2 + A * (1 - np.cos(2 * np.pi * x)))
 
 
 def ma(x, n):
-    return np.convolve(x, np.ones(n)/n, mode='valid')
+    return np.convolve(x, np.ones(n) / n, mode="valid")
 
 
 def calculate_mean_abs_noise(array, n=31):
     array_ma = np.apply_along_axis(func1d=ma, axis=0, arr=array, n=n)
-    array_valid = array[n//2: n//2 + len(array_ma)]
+    array_valid = array[n // 2 : n // 2 + len(array_ma)]
     noise = np.mean(np.abs(array_valid - array_ma), axis=0)
     return noise
 
 
 @njit
 def transform_genes_bounds(genes, bounds, gammas, mask_multipliers):
-    assert (len(genes) == len(bounds) == len(gammas) == len(mask_multipliers))
+    assert len(genes) == len(bounds) == len(gammas) == len(mask_multipliers)
 
     genes_transformed = np.zeros_like(genes)
     bounds_transformed = np.zeros_like(bounds)
@@ -82,7 +82,9 @@ def transform_genes_bounds(genes, bounds, gammas, mask_multipliers):
         lb, ub = bounds[i]
         gene = genes[i]
         if mask_multipliers[i]:  # log10 scale
-            bounds_transformed[i, 1] = np.log10(ub / lb) * 1 / (gammas[i] / scaler_dimensional)
+            bounds_transformed[i, 1] = (
+                np.log10(ub / lb) * 1 / (gammas[i] / scaler_dimensional)
+            )
             genes_transformed[i] = np.log10(gene)
             lb_temp = np.log10(lb)
             ub_temp = np.log10(ub)
@@ -91,14 +93,20 @@ def transform_genes_bounds(genes, bounds, gammas, mask_multipliers):
             bounds_transformed[i, 1] = (ub - lb) * 1 / (gammas[i] / scaler_dimensional)
             lb_temp = lb
             ub_temp = ub
-        genes_transformed[i] = (genes_transformed[i] - lb_temp) / (ub_temp - lb_temp) * bounds_transformed[i, 1]
+        genes_transformed[i] = (
+            (genes_transformed[i] - lb_temp)
+            / (ub_temp - lb_temp)
+            * bounds_transformed[i, 1]
+        )
 
     return genes_transformed, bounds_transformed
 
 
 @njit
-def transform_genes_bounds_back(genes_transformed, bounds_transformed, bounds_back, mask_multipliers):
-    assert (len(genes_transformed) == len(bounds_transformed) == len(mask_multipliers))
+def transform_genes_bounds_back(
+    genes_transformed, bounds_transformed, bounds_back, mask_multipliers
+):
+    assert len(genes_transformed) == len(bounds_transformed) == len(mask_multipliers)
 
     genes_back = np.zeros_like(genes_transformed)
 
@@ -107,11 +115,14 @@ def transform_genes_bounds_back(genes_transformed, bounds_transformed, bounds_ba
         lb_tran, ub_tran = bounds_transformed[i]
         gene = genes_transformed[i]
         if mask_multipliers[i]:
-            genes_back[i] = np.log10(lb_back) + (gene - lb_tran) / (ub_tran - lb_tran) * (
-                    np.log10(ub_back) - np.log10(lb_back))
+            genes_back[i] = np.log10(lb_back) + (gene - lb_tran) / (
+                ub_tran - lb_tran
+            ) * (np.log10(ub_back) - np.log10(lb_back))
             genes_back[i] = np.power(10, genes_back[i])
         else:  # linear scale
-            genes_back[i] = lb_back + (gene - lb_tran) / (ub_tran - lb_tran) * (ub_back - lb_back)
+            genes_back[i] = lb_back + (gene - lb_tran) / (ub_tran - lb_tran) * (
+                ub_back - lb_back
+            )
 
     return genes_back
 
@@ -119,37 +130,37 @@ def transform_genes_bounds_back(genes_transformed, bounds_transformed, bounds_ba
 def wrapped_ndptr(*args, **kwargs):
     #  https://stackoverflow.com/a/37664693/13213091
     base = np.ctypeslib.ndpointer(*args, **kwargs)
+
     def from_param(cls, obj):
         if obj is None:
             return obj
         return base.from_param(obj)
-    return type(base.__name__, (base,), {'from_param': classmethod(from_param)})
 
-DoubleArrayType_1D = wrapped_ndptr(dtype=np.float64, ndim=1, flags='C_CONTIGUOUS')
-DoubleArrayType_2D = wrapped_ndptr(dtype=np.float64, ndim=2, flags='C_CONTIGUOUS')
+    return type(base.__name__, (base,), {"from_param": classmethod(from_param)})
 
 
-def strip_comments(code, comment_char='#'):
+DoubleArrayType_1D = wrapped_ndptr(dtype=np.float64, ndim=1, flags="C_CONTIGUOUS")
+DoubleArrayType_2D = wrapped_ndptr(dtype=np.float64, ndim=2, flags="C_CONTIGUOUS")
+
+
+def strip_comments(code, comment_char="#"):
     lines = []
-    for i, line in enumerate(code.split('\n')):
+    for i, line in enumerate(code.split("\n")):
         items = line.split(comment_char)
         if len(items) >= 2:
             line = items[0]
         lines.append(line)
-    code = '\n'.join(lines)
+    code = "\n".join(lines)
     return code
 
 
 def calculate_autoscaling(signal_to_scale, signal_reference):
-
     def scalar_multiplications(a, b):
         if len(a) != len(b):
             raise ValueError
-        coefficients = np.array([np.dot(a, b),
-                                 np.sum(a),
-                                 np.sum(b),
-                                 np.sum(a**2),
-                                 len(a)])
+        coefficients = np.array(
+            [np.dot(a, b), np.sum(a), np.sum(b), np.sum(a ** 2), len(a)]
+        )
         return coefficients
 
     c = scalar_multiplications(signal_to_scale, signal_reference)
@@ -176,4 +187,3 @@ def calculate_reflection(ub, lb, values, shifts):
     shifts = np.abs(np.abs(shifts - b) - ptp) - (ptp - b)
     result = values + shifts
     return result
-

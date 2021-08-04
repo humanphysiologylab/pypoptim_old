@@ -5,7 +5,6 @@ import numpy as np
 
 
 class Solution:
-
     def __init__(self, x, **kwargs_data):
 
         x = np.asfarray(x)
@@ -17,11 +16,11 @@ class Solution:
         self._data = copy.deepcopy(kwargs_data)
 
     def __repr__(self):
-        s =  'Solution = {\n'
-        s += '    x    = {},\n'.format(self.x)
-        s += '    y    = {},\n'.format(self._y)
-        s += '    data = {}\n'.format(self._data)
-        s += '}'
+        s = "Solution = {\n"
+        s += "    x    = {},\n".format(self.x)
+        s += "    y    = {},\n".format(self._y)
+        s += "    data = {}\n".format(self._data)
+        s += "}"
         return s
 
     def __str__(self):
@@ -64,7 +63,7 @@ class Solution:
     def __len__(self):
         return len(self._x)
 
-    #x
+    # x
     @property
     def x(self):
         return self._x

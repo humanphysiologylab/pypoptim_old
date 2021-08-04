@@ -2,10 +2,12 @@ import copy
 
 import numpy as np
 
-from pypoptim.helpers import random_value_from_bounds, \
-    transform_genes_bounds, \
-    transform_genes_bounds_back, \
-    is_values_inside_bounds
+from pypoptim.helpers import (
+    random_value_from_bounds,
+    transform_genes_bounds,
+    transform_genes_bounds_back,
+    is_values_inside_bounds,
+)
 from .selection import tournament_selection
 from .crossover import sbx_crossover
 from .mutation import cauchy_mutation_population
@@ -17,12 +19,23 @@ logger = logging.getLogger(__name__)
 
 
 class GA:
+    def __init__(
+        self,
+        SolutionSubclass,
+        bounds,
+        gammas=None,
+        gamma_default=1.0,
+        mask_log10_scale=None,
+        mutation_rate=1.0,
+        crossover_rate=1.0,
+        selection_force=2,
+        keys_data_transmit=None,
+        rng=None,
+    ):
 
-    def __init__(self, SolutionSubclass, bounds, gammas=None, gamma_default=1., mask_log10_scale=None,
-                 mutation_rate=1., crossover_rate=1., selection_force=2,
-                 keys_data_transmit=None, rng=None):
-
-        if issubclass(SolutionSubclass, Solution) and not isinstance(SolutionSubclass, Solution):
+        if issubclass(SolutionSubclass, Solution) and not isinstance(
+            SolutionSubclass, Solution
+        ):
             self._SolutionSubclass = SolutionSubclass
         else:
             raise TypeError
@@ -63,16 +76,15 @@ class GA:
                 raise ValueError
             self._mask_log10_scale = mask_log10_scale
 
-        _, self._bounds_transformed = transform_genes_bounds(self._bounds[:, 0],
-                                                             self._bounds,
-                                                             self._gammas,
-                                                             self._mask_log10_scale)
+        _, self._bounds_transformed = transform_genes_bounds(
+            self._bounds[:, 0], self._bounds, self._gammas, self._mask_log10_scale
+        )
 
-        if not (0. <= mutation_rate <= 1):
+        if not (0.0 <= mutation_rate <= 1):
             raise ValueError
         self._mutation_rate = mutation_rate
 
-        if not (0. <= crossover_rate <= 1):
+        if not (0.0 <= crossover_rate <= 1):
             raise ValueError
         self._crossover_rate = crossover_rate
 
@@ -102,38 +114,45 @@ class GA:
 
     def __repr__(self):
 
-        hstack = np.hstack([self._bounds,
-                            self._gammas.reshape(-1, 1),
-                            self._mask_log10_scale.reshape(-1, 1)])
-        s = f'{self.__class__.__name__}:\n'
-        s += f'[bounds_lower bounds_upper gammas mask_log_10_scale]\n'
+        hstack = np.hstack(
+            [
+                self._bounds,
+                self._gammas.reshape(-1, 1),
+                self._mask_log10_scale.reshape(-1, 1),
+            ]
+        )
+        s = f"{self.__class__.__name__}:\n"
+        s += f"[bounds_lower bounds_upper gammas mask_log_10_scale]\n"
         s += str(hstack) + "\n"
-        s += f'mutation_rate: {self._mutation_rate}\n'
-        s += f'crossover_rate: {self._crossover_rate}\n'
-        s += f'selection_force: {self._selection_force}\n'
-        s += f'keys_data_transmit: {self._keys_data_transmit}\n'
+        s += f"mutation_rate: {self._mutation_rate}\n"
+        s += f"crossover_rate: {self._crossover_rate}\n"
+        s += f"selection_force: {self._selection_force}\n"
+        s += f"keys_data_transmit: {self._keys_data_transmit}\n"
         return s
 
     def __str__(self):
         return self.__repr__()
 
     def _transform_genes(self, genes):
-        genes_transformed, bounds_transformed = transform_genes_bounds(genes,
-                                                                       self._bounds,
-                                                                       self._gammas,
-                                                                       self._mask_log10_scale)
-        assert (np.allclose(bounds_transformed, self._bounds_transformed))
+        genes_transformed, bounds_transformed = transform_genes_bounds(
+            genes, self._bounds, self._gammas, self._mask_log10_scale
+        )
+        assert np.allclose(bounds_transformed, self._bounds_transformed)
         return genes_transformed
 
     def _transform_genes_back(self, genes_transformed):
-        genes = transform_genes_bounds_back(genes_transformed,
-                                            self._bounds_transformed,
-                                            self._bounds,
-                                            self._mask_log10_scale)
+        genes = transform_genes_bounds_back(
+            genes_transformed,
+            self._bounds_transformed,
+            self._bounds,
+            self._mask_log10_scale,
+        )
         return genes
 
     def _transform_solution(self, sol):
-        sol_transformed = self._SolutionSubclass(self._transform_genes(sol.x), **sol.data)
+        sol_transformed = self._SolutionSubclass(
+            self._transform_genes(sol.x), **sol.data
+        )
         sol_transformed._y = sol.y
         return sol_transformed
 
@@ -144,8 +163,10 @@ class GA:
         return sol
 
     def generate_solution(self) -> Solution:
-        genes_transformed = [random_value_from_bounds(self._bounds_transformed[i], rng=self._rng)
-                             for i in range(self._n_genes)]
+        genes_transformed = [
+            random_value_from_bounds(self._bounds_transformed[i], rng=self._rng)
+            for i in range(self._n_genes)
+        ]
         genes_transformed = np.array(genes_transformed)
         genes = self._transform_genes_back(genes_transformed)
         sol = self._SolutionSubclass(genes)
@@ -159,14 +180,18 @@ class GA:
             sol_child[key] = copy.deepcopy(sol_parent[key])
 
     def _selection(self, population) -> Solution:  # tournament selection
-        return tournament_selection(np.array(population, dtype=object),
-                                    self._selection_force, rng=self._rng)
+        return tournament_selection(
+            np.array(population, dtype=object), self._selection_force, rng=self._rng
+        )
 
     def _crossover(self, genes1, genes2) -> tuple:
-        return sbx_crossover(genes1, genes2,
-                             bounds=self._bounds_transformed,
-                             cross_rate=self._crossover_rate,
-                             rng=self._rng)
+        return sbx_crossover(
+            genes1,
+            genes2,
+            bounds=self._bounds_transformed,
+            cross_rate=self._crossover_rate,
+            rng=self._rng,
+        )
 
     def get_mutants(self, population, size=1):
 
@@ -186,11 +211,14 @@ class GA:
                 parent1 = self._selection(population)
                 parent2 = self._selection(population)
 
-            parent1_transformed, parent2_transformed = [self._transform_solution(p) for p in (parent1, parent2)]
+            parent1_transformed, parent2_transformed = [
+                self._transform_solution(p) for p in (parent1, parent2)
+            ]
 
             if self._rng.random() <= self._crossover_rate:
-                offspring_genes = self._crossover(parent1_transformed.x,
-                                                  parent2_transformed.x)
+                offspring_genes = self._crossover(
+                    parent1_transformed.x, parent2_transformed.x
+                )
                 parent_data_transmitter = min(parent1_transformed, parent2_transformed)
                 for genes in offspring_genes:
                     child = self._SolutionSubclass(genes)
@@ -201,13 +229,17 @@ class GA:
                 child2 = copy.deepcopy(parent2_transformed)
                 new_population += [child1, child2]
 
-        new_population = new_population[:size]  # sbx_crossover creates pairs so this is for odd size of the population
+        new_population = new_population[
+            :size
+        ]  # sbx_crossover creates pairs so this is for odd size of the population
 
-        new_population = cauchy_mutation_population(new_population,
-                                                    bounds=self._bounds_transformed,
-                                                    gamma=self._gamma_default,
-                                                    mutation_rate=self._mutation_rate,
-                                                    rng=self._rng)
+        new_population = cauchy_mutation_population(
+            new_population,
+            bounds=self._bounds_transformed,
+            gamma=self._gamma_default,
+            mutation_rate=self._mutation_rate,
+            rng=self._rng,
+        )
 
         new_population = [self._transform_solution_back(sol) for sol in new_population]
 
@@ -234,24 +266,24 @@ class GA:
 
     def filter_population(self, population) -> list:
 
-        logger.debug('filter_population: START')
+        logger.debug("filter_population: START")
 
         population_filtered = []
         for i, sol in enumerate(population):
             if not sol.is_updated():
-                logger.debug(f'  {i}: not updated')
+                logger.debug(f"  {i}: not updated")
                 continue
             if not sol.is_valid():
-                logger.debug(f'  {i} not valid')
+                logger.debug(f"  {i} not valid")
                 continue
             if not self.is_solution_inside_bounds(sol):
-                logger.debug(f'  {i} outside bounds')
+                logger.debug(f"  {i} outside bounds")
                 continue
 
-            logger.debug(f'  {i} kept')
+            logger.debug(f"  {i} kept")
             population_filtered.append(sol)
 
-        logger.debug('filter_population: END')
+        logger.debug("filter_population: END")
 
         return population_filtered
 

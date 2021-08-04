@@ -17,7 +17,7 @@ def cauchy_mutation(genes, gamma=1, bounds=None, rng=None):  # do not change gam
     else:
         if not is_values_inside_bounds(genes, bounds):
             raise ValueError
-    assert (len(genes) == len(bounds))
+    assert len(genes) == len(bounds)
 
     genes_new = []
     if rng is None:
@@ -56,7 +56,9 @@ def cauchy_mutation_population(population, bounds, gamma, mutation_rate, rng=Non
 
         shifts = np.tile(shifts, (n_genes, 1)).T.flatten()
 
-        u = rng.standard_normal(n_genes * len(population)).reshape((n_genes, len(population)))
+        u = rng.standard_normal(n_genes * len(population)).reshape(
+            (n_genes, len(population))
+        )
         u = u / np.linalg.norm(u, axis=1)[:, None]
         u = u.flatten()
 

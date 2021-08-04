@@ -11,6 +11,7 @@ def square_solution():
 
         def is_valid(self):
             return self.is_updated()
+
     return SquareSolution
 
 
@@ -22,4 +23,5 @@ def maxabs_solution():
 
         def is_valid(self):
             return self.is_updated()
+
     return MaxAbsSolution

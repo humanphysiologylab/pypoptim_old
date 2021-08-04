@@ -18,4 +18,5 @@ dependencies:
   # - ipykernel
   - deprecated
   - pytest
+  - pre-commit
 prefix: /home/andrey/WORK/HPL/Code/pypoptim/env
