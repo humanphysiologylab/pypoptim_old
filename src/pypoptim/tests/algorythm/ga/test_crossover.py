@@ -4,15 +4,15 @@ import pytest
 from ....algorythm.ga.crossover import one_point_crossover, two_point_crossover, uniform_crossover
 from ....algorythm.ga.crossover import sbx_crossover
 
-
+@pytest.mark.xfail
 def test_one_point_crossover():
     assert 0
 
-
+@pytest.mark.xfail
 def test_two_point_crossover():
     assert 0
 
-
+@pytest.mark.xfail
 def test_uniform_crossover():
     assert 0
 
@@ -34,5 +34,3 @@ def test_sbx_crossover():
 
     for child_1, child_2 in zip(children1, children2):
         assert np.all(child_1 == child_2)
-
-

@@ -167,6 +167,7 @@ class TestGA:
         ga_optim_with_data._mutation_rate = 0
 
         mutants = ga_optim_with_data.get_mutants(population, 2)
+        ga_optim_with_data.update_population(mutants)
         population_sorted = sorted(population)
         assert min(mutants) == population_sorted[0] and min(mutants)['state'] == '0'
         assert max(mutants) == population_sorted[1] and max(mutants)['state'] == '1'
