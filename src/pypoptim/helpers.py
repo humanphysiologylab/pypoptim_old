@@ -178,14 +178,17 @@ def calculate_reflection(ub, lb, values, shifts):
     return result
 
 
-def calculate_gammas(upper_bound_global, genes_dict):
-    assert upper_bound_global > 0
-    gammas = np.zeros(len(genes_dict))
-    for gene, k in zip(genes_dict, range(len(genes_dict))):
-        lb, ub = genes_dict[gene]['bounds']
-        print(lb, ub)
-        if genes_dict[gene]['is_multiplier']:
-            gammas[k] += np.log(ub/lb)/upper_bound_global
+def calculate_gammas(upper_bound_global, bounds, mask_log10_multiplier):
+    if upper_bound_global <= 0:
+        raise Exception('The upper global bound should be positive')
+    if len(bounds) != len(mask_log10_multiplier):
+        raise Exception('The size of bounds and the mask of the multiplier should be the same')
+    gammas = np.zeros(len(bounds))
+    for numb, gene_bounds in enumerate(bounds):
+        lb, ub = gene_bounds
+        if mask_log10_multiplier[numb]:
+            assert lb > 0 and ub > 0
+            gammas[numb] += np.log(ub / lb) / upper_bound_global
         else:
-            gammas[k] += (ub-lb)/upper_bound_global
+            gammas[numb] += (ub - lb) / upper_bound_global
     return gammas
